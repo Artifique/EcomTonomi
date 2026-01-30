@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # E-commerce Fashion Website - Frontend-Only
 
 Application e-commerce complète avec dashboard administrateur, construite avec Next.js 16 et TypeScript. **Application 100% frontend-only** utilisant localStorage pour la persistance des données.
