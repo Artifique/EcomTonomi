@@ -42,12 +42,12 @@ export async function POST(request: Request) {
     // 2. Créer les articles de la commande et décrémenter le stock
     const orderItemsToInsert = cartItems.map((item: any) => ({
       order_id: orderId,
-      product_id: item.product.id,
+      product_id: item.product_id,
       quantity: item.quantity,
-      price: item.product.price,
+      price: item.price,
       size: item.size,
-      color: item.color,
-      image: item.product.images?.[0] || null, // Première image du produit
+      color: item.color.name || item.color, // Support both formats
+      image: item.image || null,
     }));
 
     const { error: orderItemsError } = await supabase
@@ -66,11 +66,11 @@ export async function POST(request: Request) {
       const { data: productData, error: productError } = await supabase
         .from('products')
         .select('stock')
-        .eq('id', item.product.id)
+        .eq('id', item.product_id)
         .single();
 
       if (productError || !productData) {
-        console.error(`Erreur lors de la récupération du stock pour le produit ${item.product.id}:`, productError);
+        console.error(`Erreur lors de la récupération du stock pour le produit ${item.product_id}:`, productError);
         // Décider comment gérer cela - annuler toute la commande, ignorer, etc.
         // Pour l'instant, nous continuons mais c'est un point à améliorer.
         continue;
@@ -80,7 +80,7 @@ export async function POST(request: Request) {
       const { error: updateStockError } = await supabase
         .from('products')
         .update({ stock: newStock })
-        .eq('id', item.product.id);
+        .eq('id', item.product_id);
 
       if (updateStockError) {
         console.error(`Erreur lors de la mise à jour du stock pour le produit ${item.product.id}:`, updateStockError);

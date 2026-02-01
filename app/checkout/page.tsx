@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Check, ChevronRight, Lock, Shield, Truck, CreditCard, ShoppingBag } from "lucide-react"
+import { Check, ChevronRight, Lock, Shield, Truck, CreditCard, ShoppingBag, Loader2 } from "lucide-react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
 import { useCart } from "@/context/cart-context"
+import { useAuth } from "@/context/auth-context"
+import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { toast } from 'sonner' // Importation de toast de sonner
@@ -17,7 +19,9 @@ import { toast } from 'sonner' // Importation de toast de sonner
 type Step = "shipping" | "payment" | "confirmation"
 
 export default function CheckoutPage() {
-  const { items, totalPrice } = useCart()
+  const { items, totalPrice, clearCart } = useCart()
+  const { user, loading: authLoading } = useAuth()
+  const router = useRouter()
   const [currentStep, setCurrentStep] = useState<Step>("shipping")
   const [formData, setFormData] = useState<{
     email: string
@@ -49,6 +53,18 @@ export default function CheckoutPage() {
 
   const [errors, setErrors] = useState<Record<string, string | null>>({})
   const [isProcessingOrder, setIsProcessingOrder] = useState(false)
+
+  // Calculer les totaux
+  const shipping = totalPrice > 100 ? 0 : 10
+  const tax = totalPrice * 0.1
+  const total = totalPrice + shipping + tax
+
+  // Protection : rediriger si non connecté
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/account')
+    }
+  }, [user, authLoading, router])
 
   // Sauvegarder dans localStorage
   const saveToLocalStorage = () => {
@@ -208,10 +224,6 @@ export default function CheckoutPage() {
     }
   }
 
-  const shipping = totalPrice > 100 ? 0 : 10
-  const tax = totalPrice * 0.1
-  const total = totalPrice + shipping + tax
-
   const steps = [
     { id: "shipping", label: "Livraison", icon: Truck },
     { id: "payment", label: "Paiement", icon: CreditCard },
@@ -219,6 +231,27 @@ export default function CheckoutPage() {
   ]
 
   const currentStepIndex = steps.findIndex((s) => s.id === currentStep)
+
+  // Afficher un loader pendant la vérification d'authentification
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main id="main-content" className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-muted-foreground" />
+            <p className="text-muted-foreground">Vérification...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    )
+  }
+
+  // Rediriger si non connecté (fallback)
+  if (!user) {
+    return null // Le useEffect va rediriger
+  }
 
   if (items.length === 0) {
     return (
@@ -622,12 +655,12 @@ export default function CheckoutPage() {
                   <h3 className="text-lg font-semibold mb-4">Résumé de la commande</h3>
                   <div className="space-y-2 mb-4">
                     {items.map((item) => (
-                      <div key={`${item.product.id}-${item.size}`} className="flex justify-between text-sm">
+                      <div key={`${item.product_id}-${item.size}`} className="flex justify-between text-sm">
                         <span className="text-muted-foreground">
-                          {item.product.name} x{item.quantity}
+                          {item.name} x{item.quantity}
                         </span>
                         <span className="text-foreground">
-                          FCFA {(item.product.price * item.quantity).toFixed(2)}
+                          FCFA {(item.price * item.quantity).toFixed(2)}
                         </span>
                       </div>
                     ))}
@@ -668,31 +701,5 @@ export default function CheckoutPage() {
     </div>
   )
 }
-
-function Loader2(props: React.SVGProps<SVGSVGElement>) {
-    return (
-      <svg
-        {...props}
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M12 2v4" />
-        <path d="M12 18v4" />
-        <path d="M4.93 4.93l2.83 2.83" />
-        <path d="M16.24 16.24l2.83 2.83" />
-        <path d="M2 12h4" />
-        <path d="M18 12h4" />
-        <path d="M4.93 19.07l2.83-2.83" />
-        <path d="M16.24 7.76l2.83-2.83" />
-      </svg>
-    );
-  }
 
 

@@ -30,6 +30,33 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 
+// Type pour les paramètres de notification
+type NotificationSettings = {
+  orderConfirmation: boolean;
+  orderShipped: boolean;
+  orderDelivered: boolean;
+  newCustomer: boolean;
+  lowStock: boolean;
+  weeklyReport: boolean;
+  lowStockThreshold: number;
+};
+
+// Type pour les paramètres d'expédition
+type ShippingSettings = {
+  freeShippingThreshold: string;
+  standardRate: string;
+  expressRate: string;
+  internationalRate: string;
+};
+
+// Type pour les paramètres de paiement
+type PaymentSettings = {
+  stripEnabled: boolean;
+  paypalEnabled: boolean;
+  bankTransferEnabled: boolean;
+  testMode: boolean;
+};
+
 // Type pour les paramètres généraux, correspondant à la table Supabase
 type StoreSettings = {
   id: number;
@@ -40,9 +67,9 @@ type StoreSettings = {
   description: string | null;
   currency: string | null;
   timezone: string | null;
-  notification_settings: any | null; // Ajouté pour les données JSONB
-  shipping_settings: any | null;     // Ajouté pour les données JSONB
-  payment_settings: any | null;      // Ajouté pour les données JSONB
+  notification_settings: NotificationSettings | null; // Utiliser le type spécifique
+  shipping_settings: ShippingSettings | null;     // Utiliser le type spécifique
+  payment_settings: PaymentSettings | null;      // Utiliser le type spécifique
   updated_at: string | null;
 };
 
@@ -59,32 +86,8 @@ export default function SettingsPage() {
   // NOTE: Les états suivants sont statiques pour l'instant.
   // Ils pourraient être déplacés dans des colonnes JSONB dans la table store_settings à l'avenir.
 
-  // Paramètres de notification
-  const [notifications, setNotifications] = useState({
-    orderConfirmation: true,
-    orderShipped: true,
-    orderDelivered: true,
-    newCustomer: true,
-    lowStock: true,
-    weeklyReport: false,
-    lowStockThreshold: 10, // Nouveau champ
-  })
-
-  // Paramètres d'expédition (statiques)
-  const [shipping, setShipping] = useState({
-    freeShippingThreshold: "50",
-    standardRate: "5.99",
-    expressRate: "12.99",
-    internationalRate: "19.99",
-  })
-
-  // Paramètres de paiement (statiques)
-  const [payment, setPayment] = useState({
-    stripEnabled: true,
-    paypalEnabled: true,
-    bankTransferEnabled: false,
-    testMode: false,
-  })
+  // NOTE: Les états suivants sont désormais gérés via storeSettings (colonnes JSONB)
+  // et ne sont plus des états locaux séparés avec des valeurs statiques.
 
   // --- EFFETS ---
 
@@ -106,11 +109,30 @@ export default function SettingsPage() {
         })
         console.error("Error fetching settings:", error)
                 } else if (data) {
-                  setStoreSettings(data)
-                  // Charger les paramètres JSONB, avec des valeurs par défaut si null
-                  if (data.notification_settings) setNotifications(data.notification_settings);
-                  if (data.shipping_settings) setShipping(data.shipping_settings);
-                  if (data.payment_settings) setPayment(data.payment_settings);
+                  setStoreSettings({
+                    ...data,
+                    notification_settings: data.notification_settings || {
+                      orderConfirmation: true,
+                      orderShipped: true,
+                      orderDelivered: true,
+                      newCustomer: true,
+                      lowStock: true,
+                      weeklyReport: false,
+                      lowStockThreshold: 10,
+                    },
+                    shipping_settings: data.shipping_settings || {
+                      freeShippingThreshold: "50",
+                      standardRate: "5.99",
+                      expressRate: "12.99",
+                      internationalRate: "19.99",
+                    },
+                    payment_settings: data.payment_settings || {
+                      stripEnabled: true,
+                      paypalEnabled: true,
+                      bankTransferEnabled: false,
+                      testMode: false,
+                    },
+                  })
                 }
                 setLoading(false)
               }
@@ -355,9 +377,15 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <Switch
-                  checked={payment.stripEnabled}
+                  checked={storeSettings.payment_settings?.stripEnabled}
                   onCheckedChange={(checked) =>
-                    setPayment({ ...payment, stripEnabled: checked })
+                    setStoreSettings({
+                      ...storeSettings,
+                      payment_settings: {
+                        ...(storeSettings.payment_settings || {}),
+                        stripEnabled: checked,
+                      },
+                    })
                   }
                 />
               </div>
@@ -373,9 +401,15 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <Switch
-                  checked={payment.paypalEnabled}
+                  checked={storeSettings.payment_settings?.paypalEnabled}
                   onCheckedChange={(checked) =>
-                    setPayment({ ...payment, paypalEnabled: checked })
+                    setStoreSettings({
+                      ...storeSettings,
+                      payment_settings: {
+                        ...(storeSettings.payment_settings || {}),
+                        paypalEnabled: checked,
+                      },
+                    })
                   }
                 />
               </div>
@@ -391,9 +425,15 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <Switch
-                  checked={payment.bankTransferEnabled}
+                  checked={storeSettings.payment_settings?.bankTransferEnabled}
                   onCheckedChange={(checked) =>
-                    setPayment({ ...payment, bankTransferEnabled: checked })
+                    setStoreSettings({
+                      ...storeSettings,
+                      payment_settings: {
+                        ...(storeSettings.payment_settings || {}),
+                        bankTransferEnabled: checked,
+                      },
+                    })
                   }
                 />
               </div>
@@ -408,9 +448,15 @@ export default function SettingsPage() {
                     </div>
                   </div>
                   <Switch
-                    checked={payment.testMode}
+                    checked={storeSettings.payment_settings?.testMode}
                     onCheckedChange={(checked) =>
-                      setPayment({ ...payment, testMode: checked })
+                      setStoreSettings({
+                        ...storeSettings,
+                        payment_settings: {
+                          ...(storeSettings.payment_settings || {}),
+                          testMode: checked,
+                        },
+                      })
                     }
                   />
                 </div>
@@ -425,9 +471,9 @@ export default function SettingsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Truck className="w-5 h-5" />
-                Tarifs d'expédition
+                Tarifs d&apos;expédition
               </CardTitle>
-              <CardDescription>Configurez les coûts et options d'expédition</CardDescription>
+              <CardDescription>Configurez les coûts et options d&apos;expédition</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="p-4 bg-green-50 rounded-xl border border-green-200">
@@ -438,9 +484,15 @@ export default function SettingsPage() {
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground">Commandes supérieures à</span>
                   <Input
-                    value={shipping.freeShippingThreshold}
+                    value={storeSettings.shipping_settings?.freeShippingThreshold || ""}
                     onChange={(e) =>
-                      setShipping({ ...shipping, freeShippingThreshold: e.target.value })
+                      setStoreSettings({
+                        ...storeSettings,
+                        shipping_settings: {
+                          ...(storeSettings.shipping_settings || {}),
+                          freeShippingThreshold: e.target.value,
+                        },
+                      })
                     }
                     className="w-24"
                   />
@@ -454,9 +506,15 @@ export default function SettingsPage() {
                   <div className="flex items-center gap-2">
                     <span className="text-muted-foreground">FCFA</span>
                     <Input
-                      value={shipping.standardRate}
+                      value={storeSettings.shipping_settings?.standardRate || ""}
                       onChange={(e) =>
-                        setShipping({ ...shipping, standardRate: e.target.value })
+                        setStoreSettings({
+                          ...storeSettings,
+                          shipping_settings: {
+                            ...(storeSettings.shipping_settings || {}),
+                            standardRate: e.target.value,
+                          },
+                        })
                       }
                     />
                   </div>
@@ -467,9 +525,15 @@ export default function SettingsPage() {
                   <div className="flex items-center gap-2">
                     <span className="text-muted-foreground">FCFA</span>
                     <Input
-                      value={shipping.expressRate}
+                      value={storeSettings.shipping_settings?.expressRate || ""}
                       onChange={(e) =>
-                        setShipping({ ...shipping, expressRate: e.target.value })
+                        setStoreSettings({
+                          ...storeSettings,
+                          shipping_settings: {
+                            ...(storeSettings.shipping_settings || {}),
+                            expressRate: e.target.value,
+                          },
+                        })
                       }
                     />
                   </div>
@@ -480,9 +544,15 @@ export default function SettingsPage() {
                   <div className="flex items-center gap-2">
                     <span className="text-muted-foreground">FCFA</span>
                     <Input
-                      value={shipping.internationalRate}
+                      value={storeSettings.shipping_settings?.internationalRate || ""}
                       onChange={(e) =>
-                        setShipping({ ...shipping, internationalRate: e.target.value })
+                        setStoreSettings({
+                          ...storeSettings,
+                          shipping_settings: {
+                            ...(storeSettings.shipping_settings || {}),
+                            internationalRate: e.target.value,
+                          },
+                        })
                       }
                     />
                   </div>
@@ -507,7 +577,7 @@ export default function SettingsPage() {
               {[{
                 key: "orderConfirmation",
                 label: "Confirmation de commande",
-                desc: "Envoyer lorsqu'une nouvelle commande est passée"
+                desc: "Envoyer lorsqu&apos;une nouvelle commande est passée"
               }, {
                 key: "orderShipped",
                 label: "Commande expédiée",
@@ -538,9 +608,15 @@ export default function SettingsPage() {
                     <p className="text-sm text-muted-foreground">{item.desc}</p>
                   </div>
                   <Switch
-                    checked={notifications[item.key as keyof typeof notifications]}
+                    checked={storeSettings.notification_settings?.[item.key as keyof typeof storeSettings.notification_settings]}
                     onCheckedChange={(checked) =>
-                      setNotifications({ ...notifications, [item.key]: checked })
+                      setStoreSettings({
+                        ...storeSettings,
+                        notification_settings: {
+                          ...(storeSettings.notification_settings || {}),
+                          [item.key]: checked,
+                        },
+                      })
                     }
                   />
                 </div>
@@ -553,9 +629,15 @@ export default function SettingsPage() {
                 </div>
                 <Input
                   type="number"
-                  value={notifications.lowStockThreshold}
+                  value={storeSettings.notification_settings?.lowStockThreshold || ""}
                   onChange={(e) =>
-                    setNotifications({ ...notifications, lowStockThreshold: parseInt(e.target.value) || 0 })
+                    setStoreSettings({
+                      ...storeSettings,
+                      notification_settings: {
+                        ...(storeSettings.notification_settings || {}),
+                        lowStockThreshold: parseInt(e.target.value) || 0,
+                      },
+                    })
                   }
                   className="w-24"
                 />

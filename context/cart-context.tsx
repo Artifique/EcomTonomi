@@ -37,9 +37,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   // Function to load the cart from Supabase
-  const loadCart = useCallback(async () => {
+  const loadCart = useCallback(async (signal?: AbortSignal) => { // Accept signal
+    // Check if signal is already aborted
+    if (signal?.aborted) {
+      return;
+    }
+
     setLoading(true);
-    if (userLoading) return; // Wait for user loading to complete
+    if (userLoading) {
+      setLoading(false);
+      return; // Wait for user loading to complete
+    }
 
     if (!user) {
       // For anonymous users, clear cart or handle from localStorage if persistence is desired
@@ -49,83 +57,134 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Try to get existing active cart for logged-in user
-    let { data: cartData, error: fetchCartError } = await supabase
-      .from('carts')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('status', 'active')
-      .single();
-
-    if (fetchCartError && fetchCartError.code !== 'PGRST116') { // PGRST116 means "no rows found"
-      console.error("Error fetching cart:", fetchCartError);
-      setLoading(false);
-      return;
-    }
-
-    let currentCartId = cartData?.id;
-
-    if (!currentCartId) {
-      // If no active cart, create one
-      const { data: newCart, error: createCartError } = await supabase
+    try {
+      // Try to get existing active cart for logged-in user
+      let { data: cartData, error: fetchCartError } = await supabase
         .from('carts')
-        .insert({ user_id: user.id, status: 'active' })
-        .select('id')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
         .single();
 
-      if (createCartError) {
-        console.error("Error creating cart:", createCartError);
+      // Check if signal was aborted during the request
+      if (signal?.aborted) {
+        return;
+      }
+
+      if (fetchCartError && fetchCartError.code !== 'PGRST116') { // PGRST116 means "no rows found"
+        // Ignore AbortError if the fetch was intentionally cancelled
+        if (fetchCartError.name === 'AbortError' || fetchCartError.message?.includes('aborted')) {
+          return;
+        }
+        console.error("Error fetching cart:", fetchCartError);
         setLoading(false);
         return;
       }
-      currentCartId = newCart.id;
-    }
-    setCartId(currentCartId);
 
-    // Fetch cart items for the determined cartId
-    const { data: cartItemsData, error: fetchItemsError } = await supabase
-      .from('cart_items')
-      .select(`
-        id,
-        product_id,
-        quantity,
-        price,
-        size,
-        color_name,
-        color_value,
-        products (name, images) // Join to get product name and images
-      `)
-      .eq('cart_id', currentCartId);
+      let currentCartId = cartData?.id;
 
-    if (fetchItemsError) {
-      console.error("Error fetching cart items:", fetchItemsError);
+      if (!currentCartId) {
+        // If no active cart, create one
+        const { data: newCart, error: createCartError } = await supabase
+          .from('carts')
+          .insert({ user_id: user.id, status: 'active' })
+          .select('id')
+          .single();
+
+        // Check if signal was aborted during the request
+        if (signal?.aborted) {
+          return;
+        }
+
+        if (createCartError) {
+          // Ignore AbortError if the insert was intentionally cancelled
+          if (createCartError.name === 'AbortError' || createCartError.message?.includes('aborted')) {
+            return;
+          }
+          console.error("Error creating cart:", createCartError);
+          setLoading(false);
+          return;
+        }
+        currentCartId = newCart.id;
+      }
+      setCartId(currentCartId);
+
+      // Fetch cart items for the determined cartId
+      const { data: cartItemsData, error: fetchItemsError } = await supabase
+        .from('cart_items')
+        .select(`
+          id,
+          product_id,
+          quantity,
+          price,
+          size,
+          color_name,
+          color_value,
+          products (name, images) // Join to get product name and images
+        `)
+        .eq('cart_id', currentCartId);
+
+      // Check if signal was aborted during the request
+      if (signal?.aborted) {
+        return;
+      }
+
+      if (fetchItemsError) {
+        // Ignore AbortError if the fetch was intentionally cancelled
+        if (fetchItemsError.name === 'AbortError' || fetchItemsError.message?.includes('aborted')) {
+          return;
+        }
+        console.error("Error fetching cart items:", fetchItemsError);
+        setLoading(false);
+        return;
+      }
+
+      const transformedItems: CartItem[] = (cartItemsData || []).map((item: any) => ({
+        id: item.id,
+        product_id: item.product_id,
+        name: item.products?.name || 'Produit',
+        image: item.products?.images?.[0] || '/placeholder-logo.svg', // Fallback image
+        price: item.price,
+        quantity: item.quantity,
+        size: item.size,
+        color: { name: item.color_name, value: item.color_value },
+      }));
+
+      setItems(transformedItems);
       setLoading(false);
-      return;
+    } catch (error: any) {
+      // Ignore AbortError
+      if (error?.name === 'AbortError' || error?.message?.includes('aborted')) {
+        return;
+      }
+      console.error("Unexpected error in loadCart:", error);
+      setLoading(false);
     }
-
-    const transformedItems: CartItem[] = cartItemsData.map((item: any) => ({
-      id: item.id,
-      product_id: item.product_id,
-      name: item.products.name,
-      image: item.products.images?.[0] || '/placeholder-logo.svg', // Fallback image
-      price: item.price,
-      quantity: item.quantity,
-      size: item.size,
-      color: { name: item.color_name, value: item.color_value },
-    }));
-
-    setItems(transformedItems);
-    setLoading(false);
   }, [user, userLoading]); // Depend on user and userLoading
 
   useEffect(() => {
-    loadCart();
+    let isMounted = true;
+    const controller = new AbortController();
+    
+    const fetchCartData = async () => {
+      if (!isMounted) return;
+      await loadCart(controller.signal);
+    };
+    
+    fetchCartData();
+    
+    return () => {
+      isMounted = false;
+      // Only abort if the component is unmounting
+      if (!controller.signal.aborted) {
+        controller.abort();
+      }
+    };
   }, [loadCart]);
 
   const addItem = useCallback(async (product: Product, quantity: number, size: string, color: { name: string; value: string }) => {
     if (!cartId || !user) {
-      console.error("No active cart or user not logged in. Cannot add item.");
-      return;
+      throw new Error("No active cart or user not logged in. Cannot add item.");
     }
 
     // Check if item already exists in cart with same size and color

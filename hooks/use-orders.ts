@@ -78,9 +78,9 @@ export function useOrders(statusFilter?: OrderStatus) {
 
       const transformedOrders: Order[] = data.map((order: any) => ({
         ...order,
-        items: order.order_items.map((item: any) => ({
+        order_items: (order.order_items || []).map((item: any) => ({
           ...item,
-          product_name: item.products?.name
+          product_name: item.products?.name || item.product_name
         }))
       }));
 
@@ -129,9 +129,9 @@ export function useOrders(statusFilter?: OrderStatus) {
 
       const transformedUpdatedOrder: Order = {
         ...data,
-        items: data.order_items.map((item: any) => ({
+        order_items: (data.order_items || []).map((item: any) => ({
           ...item,
-          product_name: item.products?.name
+          product_name: item.products?.name || item.product_name
         }))
       };
 

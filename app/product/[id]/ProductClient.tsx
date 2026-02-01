@@ -8,6 +8,7 @@ import { Heart, Minus, Plus, Star, Truck, RotateCcw, Shield, ChevronLeft, Shoppi
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useCart } from "@/context/cart-context"
+import { useAuth } from "@/context/auth-context" // Ajouté pour le statut d'authentification de l'utilisateur
 import { ImageGallery } from "@/components/image-gallery"
 import { toast } from "sonner"
 
@@ -20,10 +21,26 @@ export function ProductDetail({ product }: { product: Product }) {
   const [quantity, setQuantity] = useState(1)
   const [isFavorite, setIsFavorite] = useState(false)
   const [isAdding, setIsAdding] = useState(false)
-  const { addItem } = useCart()
+  const { addItem, loading: cartLoading } = useCart()
+  const { user, loading: userLoading } = useAuth()
   const cartButtonRef = useRef<HTMLButtonElement>(null)
 
-  if (!product) return null
+  if (!product) {
+    return (
+      <div className="container mx-auto px-4 py-12 text-center">
+        <p className="text-muted-foreground">Produit non trouvé</p>
+      </div>
+    )
+  }
+
+  // S'assurer que les données essentielles existent
+  if (!product.name || !product.price) {
+    return (
+      <div className="container mx-auto px-4 py-12 text-center">
+        <p className="text-muted-foreground">Données du produit incomplètes</p>
+      </div>
+    )
+  }
 
   const handleAddToCart = async () => {
     if (!selectedSize) {
@@ -74,15 +91,19 @@ export function ProductDetail({ product }: { product: Product }) {
       return;
     }
 
-    addItem(
-      product, // <-- Passe l'objet product complet
-      quantity,
-      selectedSize,
-      selectedColor,
-    )
-    
-    toast.success("Produit ajouté au panier !")
-    setIsAdding(false)
+    try {
+      await addItem(
+        product, // <-- Passe l'objet product complet
+        quantity,
+        selectedSize,
+        selectedColor,
+      )
+      toast.success("Produit ajouté au panier !")
+    } catch (error: any) {
+      toast.error(error.message || "Erreur lors de l'ajout au panier.")
+    } finally {
+      setIsAdding(false)
+    }
   }
 
   return (
@@ -161,7 +182,7 @@ export function ProductDetail({ product }: { product: Product }) {
           </div>
 
           <div className="flex gap-3 mb-8">
-            <Button ref={cartButtonRef} size="lg" loading={isAdding} className="flex-1 rounded-full" disabled={!selectedSize || isAdding} onClick={handleAddToCart}>
+            <Button ref={cartButtonRef} size="lg" loading={isAdding} className="flex-1 rounded-full" disabled={!selectedSize || !selectedColor || isAdding || cartLoading || userLoading || !user} onClick={handleAddToCart}>
                 {isAdding ? "Ajout en cours..." : <><ShoppingBag className="w-5 h-5 mr-2" />Ajouter au panier</>}
             </Button>
             <Button size="lg" variant="outline" className={cn("rounded-full px-4 border-border", isFavorite && "bg-red-50 border-red-200")} onClick={() => setIsFavorite(!isFavorite)} aria-label={isFavorite ? "Retirer de la liste de souhaits" : "Ajouter à la liste de souhaits"}>

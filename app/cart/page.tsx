@@ -44,15 +44,15 @@ export default function CartPage() {
               <div className="lg:col-span-2 space-y-4">
                 {items.map((item) => (
                   <div
-                    key={`${item.product.id}-${item.size}-${item.color.name}`}
+                    key={`${item.product_id}-${item.size}-${item.color.name}`}
                     className="flex gap-4 p-4 bg-secondary rounded-2xl"
                   >
                     {/* Product Image */}
-                    <Link href={`/product/${item.product.id}`}>
+                    <Link href={`/product/${item.product_id}`}>
                       <div className="relative w-24 h-28 sm:w-32 sm:h-36 rounded-xl overflow-hidden flex-shrink-0">
                         <Image
-                          src={item.product.images[0] || "/placeholder.svg"}
-                          alt={item.product.name}
+                          src={item.image || "/placeholder.svg"}
+                          alt={item.name}
                           fill
                           className="object-cover"
                         />
@@ -63,9 +63,9 @@ export default function CartPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start gap-2">
                         <div>
-                          <Link href={`/product/${item.product.id}`}>
+                          <Link href={`/product/${item.product_id}`}>
                             <h3 className="font-semibold text-foreground hover:text-accent transition-colors truncate">
-                              {item.product.name}
+                              {item.name}
                             </h3>
                           </Link>
                           <p className="text-sm text-muted-foreground mt-1">
@@ -74,7 +74,7 @@ export default function CartPage() {
                         </div>
                         <button
                           type="button"
-                          onClick={() => removeItem(item.product.id, item.size, item.color.name)}
+                          onClick={() => removeItem(item.id)}
                           className="p-1 text-muted-foreground hover:text-foreground transition-colors"
                           aria-label="Retirer l'article"
                         >
@@ -88,12 +88,7 @@ export default function CartPage() {
                           <button
                             type="button"
                             onClick={() =>
-                              updateQuantity(
-                                item.product.id,
-                                item.size,
-                                item.color.name,
-                                item.quantity - 1
-                              )
+                              updateQuantity(item.id, item.quantity - 1)
                             }
                             className="p-2 hover:bg-secondary transition-colors"
                             aria-label="Diminuer la quantité"
@@ -106,12 +101,7 @@ export default function CartPage() {
                           <button
                             type="button"
                             onClick={() =>
-                              updateQuantity(
-                                item.product.id,
-                                item.size,
-                                item.color.name,
-                                item.quantity + 1
-                              )
+                              updateQuantity(item.id, item.quantity + 1)
                             }
                             className="p-2 hover:bg-secondary transition-colors"
                             aria-label="Augmenter la quantité"
@@ -123,11 +113,11 @@ export default function CartPage() {
                         {/* Price */}
                         <div className="text-right">
                           <p className="font-semibold text-foreground">
-                            FCFA {(item.product.price * item.quantity).toFixed(2)}
+                            FCFA {(item.price * item.quantity).toFixed(2)}
                           </p>
                           {item.quantity > 1 && (
                             <p className="text-xs text-muted-foreground">
-                              FCFA {item.product.price} l'unité
+                              FCFA {item.price.toFixed(2)} l'unité
                             </p>
                           )}
                         </div>

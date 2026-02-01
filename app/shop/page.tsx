@@ -29,12 +29,22 @@ export default async function ShopPage({ searchParams: searchParamsPromise }: Sh
   // 2. Construire la requête pour les produits
   let productQuery = supabase
     .from('products')
-    .select('*, categories(name)') // Join with categories to filter by name
+    .select('*, categories(name, slug)') // Join with categories
 
-  // Filtrer par catégorie
-  const category = searchParams.category;
-  if (category && category !== "ALL") { // "ALL" is a convention used by the client component
-    productQuery = productQuery.eq('categories.name', category); // Filter by category name
+  // Filtrer par catégorie (slug)
+  const categorySlug = searchParams.category;
+  if (categorySlug && categorySlug !== "ALL") {
+    // Trouver la catégorie par son slug
+    const { data: categoryData } = await supabase
+      .from('categories')
+      .select('id')
+      .eq('slug', categorySlug)
+      .eq('is_active', true)
+      .single()
+    
+    if (categoryData) {
+      productQuery = productQuery.eq('category_id', categoryData.id)
+    }
   }
 
   // Trier les produits

@@ -12,6 +12,13 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { useCart } from "@/context/cart-context"
 
 import { useRouter } from "next/navigation" // Import useRouter
@@ -27,14 +34,14 @@ const navLinks = [
 export function Header() {
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const { totalItems } = useCart()
-  const { user } = useAuth() // Utiliser le hook useAuth
+  const { user, logout } = useAuth() // Utiliser le hook useAuth
   const router = useRouter() // Utiliser le hook useRouter
 
   const handleProfileClick = () => {
     if (user) {
       router.push("/account/dashboard") // Rediriger vers le dashboard si connecté
     } else {
-      router.push("/login") // Rediriger vers la page de connexion si non connecté
+      router.push("/account") // Rediriger vers la page de connexion si non connecté
     }
   }
 
@@ -85,9 +92,10 @@ export function Header() {
             <Image
               src="/logo.png"
               alt="Tonomi Logo"
-              width={196}
+              width={120}
               height={56}
               className="h-14 w-auto"
+              priority
             />
           </Link>
 
@@ -135,9 +143,39 @@ export function Header() {
               </Button>
             </Link>
 
-            <Button variant="ghost" size="icon" aria-label="Compte" onClick={handleProfileClick}>
-              <User className="h-5 w-5" />
-            </Button>
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" aria-label="Compte">
+                    <User className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <div className="px-2 py-1.5">
+                    <p className="text-sm font-medium">{user.name || "Utilisateur"}</p>
+                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => router.push("/account/dashboard")}>
+                    Mon compte
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push("/account/dashboard")}>
+                    Mes commandes
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={async () => {
+                    await logout()
+                    router.push("/")
+                  }}>
+                    Déconnexion
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button variant="ghost" size="icon" aria-label="Compte" onClick={handleProfileClick}>
+                <User className="h-5 w-5" />
+              </Button>
+            )}
 
             <Link href="/cart">
               <Button variant="ghost" size="icon" className="relative" aria-label="Panier">

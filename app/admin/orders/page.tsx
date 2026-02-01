@@ -39,180 +39,21 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
-import { useOrders, type Order } from "@/hooks/use-orders"
+import { useOrders, type Order, type OrderItem } from "@/hooks/use-orders"
 import { toast } from "sonner"
 
-// Mock orders data (fallback)
-const mockOrders = [
-  {
-    id: "ORD-001",
-    customer: {
-      name: "Amadou Diallo",
-      email: "amadou.d@example.com",
-      phone: "+223 76 12 34 56",
-      address: "Rue 100, Porte 20, Hamdallaye, Bamako, Mali",
-    },
-    items: [
-      {
-        id: 1,
-        name: "Modern Blazer",
-        price: 125,
-        quantity: 1,
-        size: "M",
-        color: "Black",
-        image: "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?q=80&w=200&auto=format&fit=crop",
-      },
-    ],
-    total: 125,
-    status: "completed",
-    paymentStatus: "paid",
-    paymentMethod: "Credit Card",
-    createdAt: "2024-01-15T10:30:00",
-    updatedAt: "2024-01-16T14:20:00",
-  },
-  {
-    id: "ORD-002",
-    customer: {
-      name: "Mariam Traoré",
-      email: "mariam.t@example.com",
-      phone: "+223 66 98 76 54",
-      address: "Quartier du Fleuve, Avenue de l'Indépendance, Ségou, Mali",
-    },
-    items: [
-      {
-        id: 2,
-        name: "Premium Jacket",
-        price: 189,
-        quantity: 1,
-        size: "L",
-        color: "Brown",
-        image: "https://images.unsplash.com/photo-1551028719-00167b16eac5?q=80&w=200&auto=format&fit=crop",
-      },
-      {
-        id: 3,
-        name: "Classic White Tee",
-        price: 45,
-        quantity: 2,
-        size: "L",
-        color: "White",
-        image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=200&auto=format&fit=crop",
-      },
-    ],
-    total: 279,
-    status: "processing",
-    paymentStatus: "paid",
-    paymentMethod: "PayPal",
-    createdAt: "2024-01-15T14:45:00",
-    updatedAt: "2024-01-15T14:45:00",
-  },
-  {
-    id: "ORD-003",
-    customer: {
-      name: "Bakary Coulibaly",
-      email: "bakary.c@example.com",
-      phone: "+223 70 11 22 33",
-      address: "Hippodrome, Rue 45, Sikasso, Mali",
-    },
-    items: [
-      {
-        id: 4,
-        name: "Running Sneakers",
-        price: 165,
-        quantity: 1,
-        size: "9",
-        color: "Red",
-        image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=200&auto=format&fit=crop",
-      },
-    ],
-    total: 165,
-    status: "shipped",
-    paymentStatus: "paid",
-    paymentMethod: "Credit Card",
-    trackingNumber: "ML123456789",
-    createdAt: "2024-01-14T09:15:00",
-    updatedAt: "2024-01-15T11:30:00",
-  },
-  {
-    id: "ORD-004",
-    customer: {
-      name: "Fatoumata Konaté",
-      email: "fatoumata.k@example.com",
-      phone: "+223 60 55 66 77",
-      address: "Niamakoro, Avenue Cheick Zayed, Kayes, Mali",
-    },
-    items: [
-      {
-        id: 3,
-        name: "Classic White Tee",
-        price: 45,
-        quantity: 3,
-        size: "XL",
-        color: "Black",
-        image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=200&auto=format&fit=crop",
-      },
-    ],
-    total: 135,
-    status: "pending",
-    paymentStatus: "pending",
-    paymentMethod: "Bank Transfer",
-    createdAt: "2024-01-14T16:20:00",
-    updatedAt: "2024-01-14T16:20:00",
-  },
-  {
-    id: "ORD-005",
-    customer: {
-      name: "Moussa Keïta",
-      email: "moussa.k@example.com",
-      phone: "+223 75 99 88 77",
-      address: "Daoudabougou, Rue 250, Mopti, Mali",
-    },
-    items: [
-      {
-        id: 6,
-        name: "Leather Boots",
-        price: 225,
-        quantity: 1,
-        size: "8",
-        color: "Brown",
-        image: "https://images.unsplash.com/photo-1608256246200-53e635b5b65f?q=80&w=200&auto=format&fit=crop",
-      },
-    ],
-    total: 225,
-    status: "completed",
-    paymentStatus: "paid",
-    paymentMethod: "Credit Card",
-    createdAt: "2024-01-13T11:00:00",
-    updatedAt: "2024-01-15T09:45:00",
-  },
-  {
-    id: "ORD-006",
-    customer: {
-      name: "Aïcha Sylla",
-      email: "aicha.s@example.com",
-      phone: "+223 69 44 33 22",
-      address: "Sabourou, Route de Koulouba, Gao, Mali",
-    },
-    items: [
-      {
-        id: 7,
-        name: "Denim Jacket",
-        price: 145,
-        quantity: 1,
-        size: "M",
-        color: "Blue",
-        image: "https://images.unsplash.com/photo-1576995853123-5a10305d93c0?q=80&w=200&auto=format&fit=crop",
-      },
-    ],
-    total: 145,
-    status: "cancelled",
-    paymentStatus: "refunded",
-    paymentMethod: "Credit Card",
-    createdAt: "2024-01-12T08:30:00",
-    updatedAt: "2024-01-13T10:15:00",
-  },
-]
-
-type Order = (typeof mockOrders)[0]
+// Type adapté pour l'affichage dans l'admin
+type DisplayOrder = Order & {
+  customer: {
+    name: string
+    email: string
+    phone?: string | null
+    address?: string | null
+  }
+  items: OrderItem[]
+  createdAt: string
+  updatedAt: string
+}
 
 const statusConfig = {
   pending: {
@@ -247,15 +88,29 @@ const statuses = ["ALL", "pending", "processing", "shipped", "completed", "cance
 export default function OrdersPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedStatus, setSelectedStatus] = useState("ALL")
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const [selectedOrder, setSelectedOrder] = useState<DisplayOrder | null>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
 
   const { orders, loading, updateOrderStatus, refetch } = useOrders(
     selectedStatus !== "ALL" ? selectedStatus : undefined
   )
 
+  // Transformer les commandes pour l'affichage
+  const displayOrders: DisplayOrder[] = orders.map((order) => ({
+    ...order,
+    customer: order.customer_details || {
+      name: "Client inconnu",
+      email: "",
+      phone: null,
+      address: null,
+    },
+    items: order.order_items || [],
+    createdAt: order.created_at,
+    updatedAt: order.updated_at,
+  }))
+
   // Filter orders by search
-  const filteredOrders = orders.filter((order) => {
+  const filteredOrders = displayOrders.filter((order) => {
     const matchesSearch =
       order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -266,9 +121,9 @@ export default function OrdersPage() {
   // Handle order status update
   const handleUpdateOrderStatus = async (orderId: string, newStatus: string) => {
     try {
-      await updateOrderStatus(orderId, newStatus)
+      await updateOrderStatus(orderId, newStatus as any, undefined)
       if (selectedOrder?.id === orderId) {
-        setSelectedOrder({ ...selectedOrder, status: newStatus })
+        setSelectedOrder({ ...selectedOrder, status: newStatus as any })
       }
       refetch()
     } catch (error) {
@@ -288,7 +143,7 @@ export default function OrdersPage() {
   }
 
   // View order details
-  const viewOrderDetails = (order: Order) => {
+  const viewOrderDetails = (order: DisplayOrder) => {
     setSelectedOrder(order)
     setIsDetailOpen(true)
   }
@@ -403,21 +258,21 @@ export default function OrdersPage() {
                     >
                       <td className="py-4 px-4">
                         <div>
-                          <p className="font-medium text-sm">{order.id}</p>
+                          <p className="font-medium text-sm">{order.id.substring(0, 8)}...</p>
                           <p className="text-xs text-muted-foreground">
-                            {order.items.length} article{order.items.length > 1 ? "s" : ""}
+                            {order.items?.length || 0} article{(order.items?.length || 0) > 1 ? "s" : ""}
                           </p>
                         </div>
                       </td>
                       <td className="py-4 px-4">
                         <div>
-                          <p className="font-medium text-sm">{order.customer.name}</p>
-                          <p className="text-xs text-muted-foreground">{order.customer.email}</p>
+                          <p className="font-medium text-sm">{order.customer?.name || "N/A"}</p>
+                          <p className="text-xs text-muted-foreground">{order.customer?.email || "N/A"}</p>
                         </div>
                       </td>
                       <td className="py-4 px-4 hidden md:table-cell">
                         <span className="text-sm text-muted-foreground">
-                          {formatDate(order.createdAt)}
+                          {formatDate(order.created_at)}
                         </span>
                       </td>
                       <td className="py-4 px-4">
@@ -520,19 +375,19 @@ export default function OrdersPage() {
                   <div className="bg-secondary rounded-xl p-4 space-y-2">
                     <p className="text-sm">
                       <span className="text-muted-foreground">Nom :</span>{" "}
-                      <span className="font-medium">{selectedOrder.customer.name}</span>
+                      <span className="font-medium">{selectedOrder.customer?.name || "N/A"}</span>
                     </p>
                     <p className="text-sm">
                       <span className="text-muted-foreground">E-mail :</span>{" "}
-                      {selectedOrder.customer.email}
+                      {selectedOrder.customer?.email || "N/A"}
                     </p>
                     <p className="text-sm">
                       <span className="text-muted-foreground">Téléphone :</span>{" "}
-                      {selectedOrder.customer.phone}
+                      {selectedOrder.customer?.phone || "N/A"}
                     </p>
                     <p className="text-sm">
                       <span className="text-muted-foreground">Adresse :</span>{" "}
-                      {selectedOrder.customer.address}
+                      {selectedOrder.customer?.address || "N/A"}
                     </p>
                   </div>
                 </div>
@@ -541,31 +396,31 @@ export default function OrdersPage() {
                 <div>
                   <h3 className="font-semibold text-sm mb-3">Articles de la commande</h3>
                   <div className="space-y-3">
-                    {selectedOrder.items.map((item, index) => (
+                    {selectedOrder.items?.map((item, index) => (
                       <div
-                        key={index}
+                        key={item.id || index}
                         className="flex items-center gap-4 bg-secondary rounded-xl p-4"
                       >
                         <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-background flex-shrink-0">
                           <Image
                             src={item.image || "/placeholder.svg"}
-                            alt={item.name}
+                            alt={item.product_name || "Produit"}
                             fill
                             className="object-cover"
                           />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm">{item.name}</p>
+                          <p className="font-medium text-sm">{item.product_name || "Produit"}</p>
                           <p className="text-xs text-muted-foreground">
-                            Taille : {item.size} | Couleur : {item.color}
+                            Taille : {item.size || "N/A"} | Couleur : {item.color || "N/A"}
                           </p>
                           <p className="text-xs text-muted-foreground">Qté : {item.quantity}</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold text-sm">FCFA {item.price * item.quantity}</p>
+                          <p className="font-semibold text-sm">FCFA {(Number(item.price) * item.quantity).toFixed(2)}</p>
                         </div>
                       </div>
-                    ))}
+                    )) || <p className="text-sm text-muted-foreground">Aucun article</p>}
                   </div>
                 </div>
 
@@ -576,27 +431,27 @@ export default function OrdersPage() {
                     <div className="bg-secondary rounded-xl p-4 space-y-2">
                       <p className="text-sm">
                         <span className="text-muted-foreground">Méthode :</span>{" "}
-                        {selectedOrder.paymentMethod}
+                        {selectedOrder.payment_method || "N/A"}
                       </p>
                       <p className="text-sm">
                         <span className="text-muted-foreground">Statut :</span>{" "}
                         <span
                           className={cn(
                             "capitalize",
-                            selectedOrder.paymentStatus === "paid"
+                            selectedOrder.payment_status === "paid"
                               ? "text-green-600"
-                              : selectedOrder.paymentStatus === "refunded"
+                              : selectedOrder.payment_status === "refunded"
                               ? "text-red-600"
                               : "text-yellow-600"
                           )}
                         >
-                          {selectedOrder.paymentStatus === "paid" 
+                          {selectedOrder.payment_status === "paid" 
                             ? "Payé" 
-                            : selectedOrder.paymentStatus === "refunded"
+                            : selectedOrder.payment_status === "refunded"
                             ? "Remboursé"
-                            : selectedOrder.paymentStatus === "pending"
+                            : selectedOrder.payment_status === "pending"
                             ? "En attente"
-                            : selectedOrder.paymentStatus}
+                            : selectedOrder.payment_status || "N/A"}
                         </span>
                       </p>
                     </div>
@@ -606,25 +461,25 @@ export default function OrdersPage() {
                     <div className="bg-secondary rounded-xl p-4 space-y-2">
                       <p className="text-sm">
                         <span className="text-muted-foreground">Créé le :</span>{" "}
-                        {formatDate(selectedOrder.createdAt)}
+                        {formatDate(selectedOrder.created_at)}
                       </p>
                       <p className="text-sm">
                         <span className="text-muted-foreground">Modifié le :</span>{" "}
-                        {formatDate(selectedOrder.updatedAt)}
+                        {formatDate(selectedOrder.updated_at)}
                       </p>
                     </div>
                   </div>
                 </div>
 
                 {/* Tracking */}
-                {selectedOrder.trackingNumber && (
+                {selectedOrder.tracking_number && (
                   <div>
                     <h3 className="font-semibold text-sm mb-3">Expédition</h3>
                     <div className="bg-secondary rounded-xl p-4">
                       <p className="text-sm">
                         <span className="text-muted-foreground">Numéro de suivi :</span>{" "}
                         <span className="font-mono font-medium">
-                          {selectedOrder.trackingNumber}
+                          {selectedOrder.tracking_number}
                         </span>
                       </p>
                     </div>
@@ -634,7 +489,7 @@ export default function OrdersPage() {
                 {/* Total */}
                 <div className="flex items-center justify-between pt-4 border-t border-border">
                   <span className="text-lg font-semibold">Total</span>
-                  <span className="text-2xl font-bold">FCFA {selectedOrder.total}</span>
+                  <span className="text-2xl font-bold">FCFA {Number(selectedOrder.total).toFixed(2)}</span>
                 </div>
 
                 {/* Actions */}
