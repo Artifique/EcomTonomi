@@ -21,6 +21,9 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
+import { useOrders } from "@/hooks/use-orders"
+import { useProducts } from "@/hooks/use-products"
+import { useCustomers } from "@/hooks/use-customers"
 
 // Using real data from API
 
@@ -28,11 +31,16 @@ export default function AnalyticsPage() {
   const [period, setPeriod] = useState("12m")
   const [analytics, setAnalytics] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const { orders } = useOrders()
+  const { products } = useProducts()
+  const { customers } = useCustomers()
 
   useEffect(() => {
-    fetchAnalytics()
+    if (orders.length > 0 || products.length > 0) {
+      fetchAnalytics()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [period])
+  }, [period, orders, products, customers])
 
   const fetchAnalytics = async () => {
     try {
@@ -40,18 +48,11 @@ export default function AnalyticsPage() {
       // Simuler un délai réseau
       await new Promise(resolve => setTimeout(resolve, 300))
 
-      // Calculer les analytics depuis les données locales
-      const { getOrders, getProducts, getCustomers, initializeStorage } = await import('@/lib/storage')
-      initializeStorage()
-
-      const allOrders = getOrders()
-      const allProducts = getProducts()
-      const allCustomers = getCustomers()
-
+      // Utiliser les données des hooks
       // Calculer le revenu total
-      const totalRevenue = allOrders
-        .filter(o => o.paymentStatus === 'paid')
-        .reduce((sum, o) => sum + o.total, 0)
+      const totalRevenue = orders
+        .filter(o => o.payment_status === 'paid' || o.status === 'completed')
+        .reduce((sum, o) => sum + parseFloat(o.total.toString()), 0)
 
       // Générer des données de revenu par période (mock)
       const revenueData = Array.from({ length: 12 }, (_, i) => ({
@@ -59,22 +60,30 @@ export default function AnalyticsPage() {
         revenue: Math.floor(totalRevenue / 12) + Math.random() * 1000,
       }))
 
-      // Top catégories (mock basé sur les produits)
-      const categoryCounts = allProducts.reduce((acc, p) => {
-        acc[p.category] = (acc[p.category] || 0) + 1
+      // Top catégories (basé sur les produits)
+      const categoryCounts = products.reduce((acc, p) => {
+        const categoryName = p.category_id || 'Non catégorisé'
+        acc[categoryName] = (acc[categoryName] || 0) + 1
         return acc
       }, {} as Record<string, number>)
 
       const topCategories = Object.entries(categoryCounts)
-        .map(([name, count]) => ({ name, count: count as number }))
+        .map(([name, count]) => ({ 
+          name, 
+          count: count as number,
+          revenue: 0, // À calculer si nécessaire
+          percentage: (count as number / products.length) * 100
+        }))
         .sort((a, b) => b.count - a.count)
         .slice(0, 5)
 
-      // Top produits
-      const topProducts = allProducts
+      // Top produits (basé sur les ventes estimées)
+      const topProducts = products
         .map(p => ({
+          id: p.id,
           name: p.name,
-          revenue: p.price * (p.reviews || 0) * 0.1, // Estimation
+          revenue: parseFloat(p.price.toString()) * (p.reviews || 0) * 0.1, // Estimation
+          sales: p.reviews || 0
         }))
         .sort((a, b) => b.revenue - a.revenue)
         .slice(0, 5)
@@ -82,8 +91,8 @@ export default function AnalyticsPage() {
       const analyticsData = {
         stats: {
           totalRevenue,
-          totalOrders: allOrders.length,
-          totalCustomers: allCustomers.length,
+          totalOrders: orders.length,
+          totalCustomers: customers.length,
           pageViews: 12345, // Mock
         },
         revenueData,
@@ -261,9 +270,9 @@ export default function AnalyticsPage() {
               </div>
             ))}
           </div>
-                     )}
-                   )}
-                   </CardContent>      </Card>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Main content grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -277,24 +286,24 @@ export default function AnalyticsPage() {
               <p className="text-sm text-muted-foreground text-center py-4">Aucune donnée disponible</p>
             ) : (
               topCategories.map((category: any) => (
-              <div key={category.name} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{category.name}</span>
-                  <span className="text-sm text-muted-foreground">
-                    ${category.revenue.toLocaleString()} ({category.percentage}%)
-                  </span>
+                <div key={category.name} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">{category.name}</span>
+                    <span className="text-sm text-muted-foreground">
+                      ${category.revenue.toLocaleString()} ({category.percentage}%)
+                    </span>
+                  </div>
+                  <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-accent rounded-full transition-all"
+                      style={{ width: `${category.percentage}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-accent rounded-full transition-all"
-                    style={{ width: `${category.percentage}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-                       )}
-                     )}
-                     </CardContent>        </Card>
+              ))
+            )}
+          </CardContent>
+        </Card>
 
         {/* Top Products */}
         <Card className="border-0 shadow-sm">
@@ -317,9 +326,8 @@ export default function AnalyticsPage() {
                 </div>
               ))
             )}
-                       )}
-                     )}
-                     </CardContent>        </Card>
+          </CardContent>
+        </Card>
       </div>
 
     </div>

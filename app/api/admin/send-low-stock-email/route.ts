@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
 import { Resend } from 'resend'; // Import Resend
 
-const resend = new Resend(process.env.RESEND_API_KEY); // Initialize Resend client
+// Initialize Resend client only if API key is available
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 // This API route would typically be triggered by an external service (e.g., a cron job, a Supabase Edge Function)
 // and not directly from the client, to avoid exposing API keys or enabling spam.
@@ -58,6 +59,11 @@ export async function GET(request: Request) { // Using GET for simplicity, POST 
     const emailSubject = `Alerte Stock Faible - ${products.length} produit(s) en stock critique`;
 
     // 4. Send email using Resend
+    if (!resend) {
+        console.error("RESEND_API_KEY is not set in environment variables.");
+        return NextResponse.json({ message: "Email service not configured." }, { status: 500 });
+    }
+
     if (!process.env.RESEND_FROM_EMAIL) {
         console.error("RESEND_FROM_EMAIL is not set in environment variables.");
         return NextResponse.json({ message: "Email sender not configured." }, { status: 500 });
