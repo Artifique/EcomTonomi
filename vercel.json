@@ -1,6 +1,9 @@
 {
   "buildCommand": "pnpm run build",
-  "installCommand": "pnpm install",
+  "installCommand": "pnpm install --no-frozen-lockfile",
   "framework": "nextjs",
-  "regions": ["cdg1"]
+  "regions": ["cdg1"],
+  "env": {
+    "ENABLE_BUILD_SCRIPTS": "true"
+  }
 }
