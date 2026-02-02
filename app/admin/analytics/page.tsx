@@ -257,19 +257,19 @@ export default function AnalyticsPage() {
           ) : (
             <div className="h-64 flex items-end justify-between gap-2">
               {revenueData.map((data: any) => (
-              <div key={data.month} className="flex-1 flex flex-col items-center gap-2">
-                <div
-                  className="w-full bg-accent rounded-t-lg transition-all hover:bg-accent/80 cursor-pointer relative group"
-                  style={{ height: `${(data.revenue / maxRevenue) * 100}%` }}
-                >
-                  <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-foreground text-background px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                    ${data.revenue.toLocaleString()}
+                <div key={data.month} className="flex-1 flex flex-col items-center gap-2">
+                  <div
+                    className="w-full bg-accent rounded-t-lg transition-all hover:bg-accent/80 cursor-pointer relative group"
+                    style={{ height: `${(data.revenue / maxRevenue) * 100}%` }}
+                  >
+                    <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-foreground text-background px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                      ${data.revenue.toLocaleString()}
+                    </div>
                   </div>
+                  <span className="text-xs text-muted-foreground">{data.month}</span>
                 </div>
-                <span className="text-xs text-muted-foreground">{data.month}</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
           )}
         </CardContent>
       </Card>
