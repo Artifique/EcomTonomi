@@ -282,11 +282,20 @@ export default function CheckoutPage() {
                 continue;
             }
 
-            const newStock = productData.stock - item.quantity;
-            await supabase
+            const newStock = Math.max(0, productData.stock - item.quantity); // S'assurer que le stock ne devient pas négatif
+            const { error: updateStockError } = await supabase
                 .from('products')
-                .update({ stock: newStock })
+                .update({ 
+                    stock: newStock,
+                    in_stock: newStock > 0 // Mettre à jour in_stock automatiquement
+                })
                 .eq('id', item.product_id);
+
+            if (updateStockError) {
+                console.error(`Erreur lors de la mise à jour du stock pour le produit ${item.product_id}:`, updateStockError);
+                // Ne pas bloquer la commande si la mise à jour du stock échoue
+                // mais logger l'erreur pour investigation
+            }
         }
 
         // Succès !

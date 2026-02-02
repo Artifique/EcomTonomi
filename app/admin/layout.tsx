@@ -28,6 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useAuth } from "@/context/auth-context" // Import useAuth
+import { supabase } from "@/lib/supabaseClient"
 
 const sidebarLinks = [
   { name: "Tableau de bord", href: "/admin", icon: LayoutDashboard },
@@ -44,6 +45,7 @@ export default function AdminLayout({
   children: React.ReactNode
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [notificationCount, setNotificationCount] = useState(0)
   const { user, loading, logout } = useAuth() // Use useAuth hook
   const pathname = usePathname()
   const router = useRouter()
@@ -60,6 +62,75 @@ export default function AdminLayout({
       }
     }
   }, [user, loading, router, pathname])
+
+  // Calculer le nombre de notifications non lues (stock faible + rupture)
+  useEffect(() => {
+    if (!user || user.role !== 'admin' || pathname === '/admin/login') return
+
+    const calculateNotificationCount = async () => {
+      try {
+        if (typeof window === 'undefined') return // Ne pas exécuter côté serveur
+        
+        // Récupérer les notifications lues depuis localStorage
+        const readNotifications = localStorage.getItem('readNotifications')
+        const readIds = readNotifications ? JSON.parse(readNotifications) as string[] : []
+        
+        const { data: products, error } = await supabase
+          .from('products')
+          .select('stock, id')
+          .limit(200)
+
+        if (error) {
+          console.error('Error fetching products for notifications:', error)
+          setNotificationCount(0)
+          return
+        }
+
+        if (!products || products.length === 0) {
+          setNotificationCount(0)
+          return
+        }
+
+        // Compter seulement les notifications non lues
+        let unreadCount = 0
+        products.forEach((p: any) => {
+          if (p.stock <= 0) {
+            const notificationId = `out-of-stock-${p.id}`
+            if (!readIds.includes(notificationId)) {
+              unreadCount++
+            }
+          } else if (p.stock <= 10) {
+            const notificationId = `low-stock-${p.id}`
+            if (!readIds.includes(notificationId)) {
+              unreadCount++
+            }
+          }
+        })
+
+        setNotificationCount(unreadCount)
+      } catch (error) {
+        console.error('Error calculating notification count:', error)
+        setNotificationCount(0)
+      }
+    }
+
+    calculateNotificationCount()
+    
+    // Écouter les événements de mise à jour des notifications
+    const handleNotificationsUpdate = () => {
+      calculateNotificationCount()
+    }
+    
+    window.addEventListener('notificationsUpdated', handleNotificationsUpdate)
+    
+    // Rafraîchir toutes les 30 secondes
+    const interval = setInterval(calculateNotificationCount, 30000)
+    
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('notificationsUpdated', handleNotificationsUpdate)
+    }
+  }, [user, pathname])
 
   // Do not show the admin layout on the login page
   if (pathname === '/admin/login') {
@@ -198,10 +269,16 @@ export default function AdminLayout({
 
             {/* Right side actions */}
             <div className="flex items-center gap-2 ml-auto">
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="w-5 h-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-              </Button>
+              <Link href="/admin/notifications">
+                <Button variant="ghost" size="icon" className="relative">
+                  <Bell className="w-5 h-5" />
+                  {notificationCount > 0 && (
+                    <span className="absolute top-1 right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                      {notificationCount > 99 ? '99+' : notificationCount}
+                    </span>
+                  )}
+                </Button>
+              </Link>
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

@@ -142,32 +142,82 @@ export default function SettingsPage() {
   // --- GESTIONNAIRES D'ÉVÉNEMENTS ---
 
   const handleSave = async () => {
-    // NOTE: Actuellement, seule la section "Général" est sauvegardée.
-    const { error } = await supabase
-      .from("store_settings")
-      .update({ 
-        ...storeSettings, 
-        notification_settings: notifications, // Sauvegarder les JSONB
-        shipping_settings: shipping,         // Sauvegarder les JSONB
-        payment_settings: payment,           // Sauvegarder les JSONB
-        updated_at: new Date().toISOString() 
-      })
-      .eq("id", 1)
+    setLoading(true)
+    try {
+      // Vérifier d'abord si la ligne existe, sinon l'insérer
+      const { data: existingData, error: checkError } = await supabase
+        .from("store_settings")
+        .select("id")
+        .eq("id", 1)
+        .single()
 
-    if (error) {
+      let error
+      
+      if (checkError && checkError.code === 'PGRST116') {
+        // La ligne n'existe pas, on l'insère
+        const { error: insertError } = await supabase
+          .from("store_settings")
+          .insert({ 
+            id: 1,
+            ...storeSettings, 
+            notification_settings: storeSettings.notification_settings,
+            shipping_settings: storeSettings.shipping_settings,
+            payment_settings: storeSettings.payment_settings,
+            updated_at: new Date().toISOString() 
+          })
+        error = insertError
+      } else if (checkError) {
+        error = checkError
+      } else {
+        // La ligne existe, on la met à jour
+        const { error: updateError } = await supabase
+          .from("store_settings")
+          .update({ 
+            ...storeSettings, 
+            notification_settings: storeSettings.notification_settings,
+            shipping_settings: storeSettings.shipping_settings,
+            payment_settings: storeSettings.payment_settings,
+            updated_at: new Date().toISOString() 
+          })
+          .eq("id", 1)
+        error = updateError
+      }
+
+      if (error) {
+        console.error("Error saving settings:", error)
+        // Message d'erreur plus détaillé selon le type d'erreur
+        let errorMessage = "Une erreur est survenue lors de l'enregistrement."
+        
+        if (error.code === '42501') {
+          errorMessage = "Permission refusée. Vérifiez que vous êtes connecté en tant qu'administrateur et que la fonction is_admin() existe dans Supabase."
+        } else if (error.code === 'PGRST116') {
+          errorMessage = "Aucune ligne trouvée. La ligne de paramètres par défaut n'existe pas dans la base de données."
+        } else if (error.message) {
+          errorMessage = error.message
+        }
+        
+        toast({
+          title: "Échec de la sauvegarde",
+          description: errorMessage,
+          variant: "destructive",
+        })
+      } else {
+        setSaved(true)
+        toast({
+          title: "Enregistré !",
+          description: "Les paramètres de votre boutique ont été mis à jour.",
+        })
+        setTimeout(() => setSaved(false), 2000)
+      }
+    } catch (err: any) {
+      console.error("Unexpected error saving settings:", err)
       toast({
-        title: "Échec de la sauvegarde",
-        description: "Une erreur est survenue lors de l'enregistrement.",
+        title: "Erreur inattendue",
+        description: err.message || "Une erreur inattendue est survenue.",
         variant: "destructive",
       })
-      console.error("Error saving settings:", error)
-    } else {
-      setSaved(true)
-      toast({
-        title: "Enregistré !",
-        description: "Les paramètres de votre boutique ont été mis à jour.",
-      })
-      setTimeout(() => setSaved(false), 2000)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -190,6 +240,7 @@ export default function SettingsPage() {
         </div>
         <Button
           onClick={handleSave}
+          disabled={loading}
           className={cn(
             "rounded-full gap-2 transition-all",
             saved
@@ -197,7 +248,12 @@ export default function SettingsPage() {
               : "bg-foreground text-background hover:bg-foreground/90"
           )}
         >
-          {saved ? (
+          {loading ? (
+            <>
+              <Save className="w-4 h-4 animate-spin" />
+              Enregistrement...
+            </>
+          ) : saved ? (
             <>
               <Check className="w-4 h-4" />
               Enregistré !

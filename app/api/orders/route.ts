@@ -101,7 +101,7 @@ export async function POST(request: Request) {
         .eq('id', item.product_id);
 
       if (updateStockError) {
-        console.error(`Erreur lors de la mise à jour du stock pour le produit ${item.product.id}:`, updateStockError);
+        console.error(`Erreur lors de la mise à jour du stock pour le produit ${item.product_id}:`, updateStockError);
         // Décider comment gérer cela
       }
     }

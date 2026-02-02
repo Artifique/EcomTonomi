@@ -12,6 +12,7 @@ import {
   Package,
   ArrowUpRight,
   Loader2,
+  AlertTriangle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -154,7 +155,7 @@ export default function AdminDashboard() {
 
   const loading = ordersLoading || productsLoading || customersLoading; // Combined loading state
 
-  // Derived analytics from real-time data - Optimisé avec early return et limite
+  // Derived analytics from real-time data - Optimisé avec early return
   const { totalRevenue, totalOrders, totalCustomers, topProductsCalculated } = useMemo(() => {
     // Early return si les données ne sont pas encore chargées
     if (orders.length === 0 && products.length === 0) {
@@ -167,24 +168,25 @@ export default function AdminDashboard() {
     }
 
     let revenue = 0;
-    let numOrders = 0;
+    let numOrders = orders.length; // Compter toutes les commandes
     let numCustomers = customers.length;
     // Utiliser Map pour de meilleures performances
     const productSalesMap = new Map<string, { sales: number; revenue: number; product: any }>();
 
-    // Limiter le traitement aux 100 premières commandes pour améliorer les performances
-    const limitedOrders = orders.slice(0, 100);
-    
-    limitedOrders.forEach(order => {
-      // Assuming 'paid' orders contribute to revenue
-      if (order.payment_status === 'paid') {
-        revenue += order.total;
-        numOrders++;
+    // Traiter toutes les commandes pour un calcul précis
+    orders.forEach(order => {
+      // Calculer le revenu : compter toutes les commandes (payées, complétées, ou en traitement)
+      // Exclure seulement les commandes annulées
+      if (order.status !== 'cancelled') {
+        const orderTotal = parseFloat(order.total?.toString() || '0');
+        if (!isNaN(orderTotal)) {
+          revenue += orderTotal;
+        }
       }
       
-      // Limiter le traitement des order_items
-      const limitedItems = order.order_items?.slice(0, 10) || [];
-      limitedItems.forEach(item => {
+      // Traiter tous les order_items pour les statistiques de produits
+      const orderItems = order.order_items || [];
+      orderItems.forEach(item => {
         // Find the product from the products array for details, or use item.product_name
         const productDetail = products.find(p => p.id === item.product_id);
         
@@ -205,13 +207,14 @@ export default function AdminDashboard() {
     const topProductsSorted = Array.from(productSalesMap.values())
       .sort((a, b) => b.sales - a.sales) // Sort by sales
       .slice(0, 4) // Take top 4
-      .map(item => ({
-        id: item.product?.id || `product-${item.product?.name}`, // Fallback ID
-        name: item.product?.name,
+      .map((item, index) => ({
+        id: item.product?.id || `product-sales-${index}-${item.sales}`, // ID unique avec index et sales pour éviter les doublons
+        name: item.product?.name || "Produit inconnu",
         image: item.product?.images?.[0] || "/placeholder.svg",
         sales: item.sales,
         revenue: item.revenue,
-      }));
+      }))
+      .filter(item => item.id); // Filtrer les items sans ID valide
 
     return {
       totalRevenue: revenue,
@@ -225,14 +228,14 @@ export default function AdminDashboard() {
   const stats = [
     {
       title: "Revenu total",
-      value: `FCFA ${Number(totalRevenue).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      value: `FCFA ${Number(totalRevenue).toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
       change: "+0%", // You can calculate this from previous period
       trend: "up" as const,
       icon: DollarSign,
     },
     {
       title: "Commandes",
-      value: totalOrders.toLocaleString(),
+      value: totalOrders.toLocaleString('fr-FR'),
       change: "+0%",
       trend: "up" as const,
       icon: ShoppingCart,
@@ -267,6 +270,19 @@ export default function AdminDashboard() {
   // Get top products from analytics
   const topProducts = topProductsCalculated;
 
+  // Calculer les alertes de stock
+  const lowStockProducts = useMemo(() => {
+    if (loading || products.length === 0) return [];
+    return products.filter(p => p.stock <= 10 && p.stock > 0);
+  }, [products, loading]);
+
+  const outOfStockProducts = useMemo(() => {
+    if (loading || products.length === 0) return [];
+    return products.filter(p => p.stock <= 0);
+  }, [products, loading]);
+
+  const totalStockAlerts = lowStockProducts.length + outOfStockProducts.length;
+
   return (
     <div className="space-y-6">
       {/* Page header */}
@@ -292,6 +308,35 @@ export default function AdminDashboard() {
           ))}
         </div>
       </div>
+
+      {/* Alertes de stock faible */}
+      {!loading && totalStockAlerts > 0 && (
+        <Card className="border-0 shadow-sm bg-yellow-50 border-yellow-200 dark:bg-yellow-950 dark:border-yellow-800">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                <div>
+                  <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                    Alertes de stock
+                  </p>
+                  <p className="text-xs text-yellow-700 dark:text-yellow-300">
+                    {lowStockProducts.length > 0 && `${lowStockProducts.length} produit(s) en stock faible`}
+                    {lowStockProducts.length > 0 && outOfStockProducts.length > 0 && " • "}
+                    {outOfStockProducts.length > 0 && `${outOfStockProducts.length} produit(s) en rupture de stock`}
+                  </p>
+                </div>
+              </div>
+              <Link href="/admin/inventory?filter=low">
+                <Button variant="outline" size="sm" className="rounded-full">
+                  Voir les détails
+                  <ArrowUpRight className="w-4 h-4 ml-1" />
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Stats cards */}
       {loading ? (

@@ -76,7 +76,7 @@ export function useOrders(statusFilter?: OrderStatus) {
           )
         `)
         .order('created_at', { ascending: false })
-        .limit(100) // Limiter à 100 commandes pour améliorer les performances
+        .limit(500) // Augmenter la limite pour des statistiques plus précises
 
       if (statusFilter && statusFilter !== 'ALL') {
         query = query.eq('status', statusFilter)
