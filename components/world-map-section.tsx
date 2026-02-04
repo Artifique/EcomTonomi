@@ -12,196 +12,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import Image from "next/image"
-
-// Interface pour un client
-interface Customer {
-  id: string
-  name: string
-  avatar?: string
-  joinedDate?: string
-}
-
-// Données de localisation avec clients associés
-interface LocationData {
-  lat: number
-  lng: number
-  count: number
-  city: string
-  country: string
-  customers: Customer[]
-}
-
-// Données de localisation des clients (exemple - à remplacer par des données réelles)
-const customerLocations: LocationData[] = [
-  {
-    lat: 48.8566,
-    lng: 2.3522,
-    count: 75,
-    city: "Paris",
-    country: "France",
-    customers: [
-      { id: "1", name: "Sophie Martin", joinedDate: "2024-01-15" },
-      { id: "2", name: "Pierre Dubois", joinedDate: "2024-02-20" },
-      { id: "3", name: "Marie Leclerc", joinedDate: "2024-03-10" },
-      { id: "4", name: "Jean Bernard", joinedDate: "2024-01-05" },
-      { id: "5", name: "Claire Moreau", joinedDate: "2024-02-28" },
-    ],
-  },
-  {
-    lat: 51.5074,
-    lng: -0.1278,
-    count: 43,
-    city: "London",
-    country: "UK",
-    customers: [
-      { id: "6", name: "James Wilson", joinedDate: "2024-01-12" },
-      { id: "7", name: "Emma Thompson", joinedDate: "2024-02-15" },
-      { id: "8", name: "Oliver Brown", joinedDate: "2024-03-05" },
-    ],
-  },
-  {
-    lat: 40.7128,
-    lng: -74.0060,
-    count: 36,
-    city: "New York",
-    country: "USA",
-    customers: [
-      { id: "9", name: "Michael Johnson", joinedDate: "2024-01-20" },
-      { id: "10", name: "Sarah Davis", joinedDate: "2024-02-10" },
-      { id: "11", name: "David Miller", joinedDate: "2024-03-01" },
-    ],
-  },
-  {
-    lat: 35.6762,
-    lng: 139.6503,
-    count: 29,
-    city: "Tokyo",
-    country: "Japan",
-    customers: [
-      { id: "12", name: "Yuki Tanaka", joinedDate: "2024-01-18" },
-      { id: "13", name: "Hiroshi Suzuki", joinedDate: "2024-02-22" },
-    ],
-  },
-  {
-    lat: -33.8688,
-    lng: 151.2093,
-    count: 17,
-    city: "Sydney",
-    country: "Australia",
-    customers: [
-      { id: "14", name: "Emma Williams", joinedDate: "2024-01-25" },
-      { id: "15", name: "Lucas Anderson", joinedDate: "2024-02-14" },
-    ],
-  },
-  {
-    lat: 45.5017,
-    lng: -73.5673,
-    count: 14,
-    city: "Montreal",
-    country: "Canada",
-    customers: [
-      { id: "16", name: "Olivier Tremblay", joinedDate: "2024-01-30" },
-    ],
-  },
-  {
-    lat: 50.1109,
-    lng: 8.6821,
-    count: 11,
-    city: "Frankfurt",
-    country: "Germany",
-    customers: [
-      { id: "17", name: "Hans Mueller", joinedDate: "2024-02-05" },
-    ],
-  },
-  {
-    lat: 19.4326,
-    lng: -99.1332,
-    count: 11,
-    city: "Mexico City",
-    country: "Mexico",
-    customers: [
-      { id: "18", name: "Carlos Rodriguez", joinedDate: "2024-02-08" },
-    ],
-  },
-  {
-    lat: 25.2048,
-    lng: 55.2708,
-    count: 11,
-    city: "Dubai",
-    country: "UAE",
-    customers: [
-      { id: "19", name: "Ahmed Al-Mansoori", joinedDate: "2024-02-12" },
-    ],
-  },
-  {
-    lat: -22.9068,
-    lng: -43.1729,
-    count: 5,
-    city: "Rio de Janeiro",
-    country: "Brazil",
-    customers: [
-      { id: "20", name: "Ana Silva", joinedDate: "2024-03-15" },
-    ],
-  },
-  {
-    lat: 1.3521,
-    lng: 103.8198,
-    count: 3,
-    city: "Singapore",
-    country: "Singapore",
-    customers: [
-      { id: "21", name: "Wei Chen", joinedDate: "2024-03-20" },
-    ],
-  },
-  {
-    lat: 55.7558,
-    lng: 37.6173,
-    count: 1,
-    city: "Moscow",
-    country: "Russia",
-    customers: [
-      { id: "22", name: "Ivan Petrov", joinedDate: "2024-03-25" },
-    ],
-  },
-  {
-    lat: 52.5200,
-    lng: 13.4050,
-    count: 1,
-    city: "Berlin",
-    country: "Germany",
-    customers: [
-      { id: "23", name: "Klaus Weber", joinedDate: "2024-03-28" },
-    ],
-  },
-  {
-    lat: 59.9343,
-    lng: 30.3351,
-    count: 1,
-    city: "Saint Petersburg",
-    country: "Russia",
-    customers: [
-      { id: "24", name: "Elena Volkova", joinedDate: "2024-04-01" },
-    ],
-  },
-  {
-    lat: 41.9028,
-    lng: 12.4964,
-    count: 1,
-    city: "Rome",
-    country: "Italy",
-    customers: [
-      { id: "25", name: "Marco Rossi", joinedDate: "2024-04-05" },
-    ],
-  },
-]
-
-const totalCustomers = customerLocations.reduce((sum, loc) => sum + loc.count, 0)
+import { useCustomerLocations, type CustomerLocation } from "@/hooks/use-customer-locations"
 
 export function WorldMapSection() {
+  const { locations, loading: locationsLoading } = useCustomerLocations()
+  const totalCustomers = locations.reduce((sum, loc) => sum + (Number(loc.count) || 0), 0)
+
   const mapContainer = useRef<HTMLDivElement>(null)
   const mapRef = useRef<any>(null)
   const markersRef = useRef<any[]>([])
-  const [selectedLocation, setSelectedLocation] = useState<LocationData | null>(null)
+  const [selectedLocation, setSelectedLocation] = useState<CustomerLocation | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   useEffect(() => {
@@ -212,6 +32,9 @@ export function WorldMapSection() {
         return
       }
 
+      // Nettoyer le conteneur pour éviter les doublons en cas de re-render
+      mapContainer.current.innerHTML = ""
+
       try {
         // Dynamic import to avoid SSR issues
         const mapboxglModule = await import("mapbox-gl")
@@ -219,9 +42,7 @@ export function WorldMapSection() {
 
         // You'll need to add your Mapbox token to .env.local
         // NEXT_PUBLIC_MAPBOX_TOKEN=your_token_here
-        const token =
-          process.env.NEXT_PUBLIC_MAPBOX_TOKEN ||
-          "pk.eyJ1Ijoia2V2aW50aW9ubyIsImEiOiJjbWp0OHZrOWIzbTduM2RzYzI3azUzYjB3In0.nnxJzAuXQssP8Vkp_ism4Q"
+        const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
 
         if (!token || token === "your_token_here") {
           // Fallback: Show a static map or placeholder
@@ -316,7 +137,7 @@ export function WorldMapSection() {
             map.addControl(new mapboxgl.NavigationControl(), "top-right")
 
             // Add markers with animations
-            customerLocations.forEach((location, index) => {
+            locations.forEach((location, index) => {
               // Determine marker size and color based on count
               const size =
                 location.count >= 50
@@ -481,7 +302,7 @@ export function WorldMapSection() {
       }
       markersRef.current = []
     }
-  }, [])
+  }, [locations])
 
   return (
     <>

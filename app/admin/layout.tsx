@@ -18,6 +18,8 @@ import {
   Bell,
   Search,
   Tag,
+  MessageSquare,
+  MapPin,
   Loader2,
   Sparkles,
 } from "lucide-react"
@@ -40,6 +42,8 @@ const sidebarLinks = [
   { name: "Catégories", href: "/admin/categories", icon: Tag },
   { name: "Commandes", href: "/admin/orders", icon: ShoppingCart },
   { name: "Clients", href: "/admin/customers", icon: Users },
+  { name: "Témoignages", href: "/admin/testimonials", icon: MessageSquare },
+  { name: "Carte clients", href: "/admin/locations", icon: MapPin },
   { name: "Paramètres", href: "/admin/settings", icon: Settings },
 ]
 

@@ -39,6 +39,7 @@ import { cn } from "@/lib/utils"
 import { useOrders } from "@/hooks/use-orders"
 import { useProducts } from "@/hooks/use-products"
 import { useCustomers } from "@/hooks/use-customers"
+import { usePageViews } from "@/hooks/use-page-views"
 
 // Mock data for dashboard (fallback)
 const stats = [
@@ -167,80 +168,6 @@ const statGradients = [
   "from-accent/20 via-accent-blue/20 to-accent-rose/10",
 ]
 
-// Mock data for charts (frontend only)
-const generateDailySalesData = () => {
-  const days = []
-  const today = new Date()
-  for (let i = 6; i >= 0; i--) {
-    const date = new Date(today)
-    date.setDate(date.getDate() - i)
-    days.push({
-      name: date.toLocaleDateString('fr-FR', { weekday: 'short' }),
-      date: date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
-      ventes: Math.floor(Math.random() * 50000) + 20000,
-      commandes: Math.floor(Math.random() * 15) + 5,
-    })
-  }
-  return days
-}
-
-const generateMonthlySalesData = () => {
-  const months = []
-  const monthNames = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc']
-  const currentMonth = new Date().getMonth()
-  for (let i = 5; i >= 0; i--) {
-    const monthIndex = (currentMonth - i + 12) % 12
-    months.push({
-      name: monthNames[monthIndex],
-      ventes: Math.floor(Math.random() * 200000) + 100000,
-      commandes: Math.floor(Math.random() * 80) + 30,
-    })
-  }
-  return months
-}
-
-const generateVisitorsData = () => {
-  const days = []
-  const today = new Date()
-  
-  // Données fixes avec variation réaliste pour garantir la visibilité
-  const baseData = [
-    { visiteurs: 285, pagesVues: 420 },
-    { visiteurs: 312, pagesVues: 468 },
-    { visiteurs: 298, pagesVues: 445 },
-    { visiteurs: 325, pagesVues: 487 },
-    { visiteurs: 340, pagesVues: 510 },
-    { visiteurs: 318, pagesVues: 477 },
-    { visiteurs: 352, pagesVues: 528 },
-    { visiteurs: 368, pagesVues: 552 },
-    { visiteurs: 345, pagesVues: 518 },
-    { visiteurs: 375, pagesVues: 563 },
-    { visiteurs: 390, pagesVues: 585 },
-    { visiteurs: 365, pagesVues: 548 },
-    { visiteurs: 405, pagesVues: 608 },
-    { visiteurs: 420, pagesVues: 630 },
-  ]
-  
-  for (let i = 13; i >= 0; i--) {
-    const date = new Date(today)
-    date.setDate(date.getDate() - i)
-    const dataIndex = 13 - i
-    
-    days.push({
-      name: date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
-      visiteurs: baseData[dataIndex]?.visiteurs || 300,
-      pagesVues: baseData[dataIndex]?.pagesVues || 450,
-    })
-  }
-  return days
-}
-
-const dailySalesData = generateDailySalesData()
-const monthlySalesData = generateMonthlySalesData()
-const visitorsData = generateVisitorsData()
-
-
-
 export default function AdminDashboard() {
   const [period, setPeriod] = useState("7d") // This can now be used to filter data if needed, but not implemented for now
   // Analytics are now derived directly from hooks, no separate state needed for `analytics`
@@ -251,8 +178,125 @@ export default function AdminDashboard() {
   const { orders, loading: ordersLoading } = useOrders()
   const { products, loading: productsLoading } = useProducts()
   const { customers, loading: customersLoading } = useCustomers()
+  const { pageViews } = usePageViews(14)
 
   const loading = ordersLoading || productsLoading || customersLoading; // Combined loading state
+
+  const dailySalesData = useMemo(() => {
+    const days = 7
+    const today = new Date()
+    const start = new Date(today)
+    start.setDate(today.getDate() - (days - 1))
+    start.setHours(0, 0, 0, 0)
+
+    const buckets = Array.from({ length: days }).map((_, i) => {
+      const d = new Date(start)
+      d.setDate(start.getDate() + i)
+      const key = d.toISOString().slice(0, 10)
+      return {
+        key,
+        name: d.toLocaleDateString("fr-FR", { weekday: "short" }),
+        date: d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" }),
+        ventes: 0,
+        commandes: 0,
+      }
+    })
+
+    const indexByKey = new Map(buckets.map((b) => [b.key, b]))
+
+    orders.forEach((o) => {
+      if (!o?.created_at) return
+      if (o.status === "cancelled") return
+      if (!(o.payment_status === "paid" || o.status === "completed" || o.status === "processing")) return
+
+      const d = new Date(o.created_at)
+      if (Number.isNaN(d.getTime())) return
+      const key = d.toISOString().slice(0, 10)
+      const bucket = indexByKey.get(key)
+      if (!bucket) return
+
+      const total = Number(o.total) || 0
+      bucket.ventes += total
+      bucket.commandes += 1
+    })
+
+    return buckets.map(({ key, ...rest }) => rest)
+  }, [orders])
+
+  const monthlySalesData = useMemo(() => {
+    const months = 6
+    const today = new Date()
+    const start = new Date(today.getFullYear(), today.getMonth() - (months - 1), 1)
+
+    const buckets = Array.from({ length: months }).map((_, i) => {
+      const d = new Date(start.getFullYear(), start.getMonth() + i, 1)
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
+      return {
+        key,
+        name: d.toLocaleDateString("fr-FR", { month: "short" }),
+        ventes: 0,
+        commandes: 0,
+      }
+    })
+
+    const indexByKey = new Map(buckets.map((b) => [b.key, b]))
+
+    orders.forEach((o) => {
+      if (!o?.created_at) return
+      if (o.status === "cancelled") return
+      if (!(o.payment_status === "paid" || o.status === "completed" || o.status === "processing")) return
+
+      const d = new Date(o.created_at)
+      if (Number.isNaN(d.getTime())) return
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
+      const bucket = indexByKey.get(key)
+      if (!bucket) return
+
+      const total = Number(o.total) || 0
+      bucket.ventes += total
+      bucket.commandes += 1
+    })
+
+    return buckets.map(({ key, ...rest }) => rest)
+  }, [orders])
+
+  const visitorsData = useMemo(() => {
+    const days = 14
+    const today = new Date()
+    const start = new Date(today)
+    start.setDate(today.getDate() - (days - 1))
+    start.setHours(0, 0, 0, 0)
+
+    const buckets = Array.from({ length: days }).map((_, i) => {
+      const d = new Date(start)
+      d.setDate(start.getDate() + i)
+      const key = d.toISOString().slice(0, 10)
+      return {
+        key,
+        name: d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" }),
+        visiteurs: 0,
+        pagesVues: 0,
+        sessions: new Set<string>(),
+      }
+    })
+
+    const indexByKey = new Map(buckets.map((b) => [b.key, b]))
+
+    pageViews.forEach((pv) => {
+      const d = new Date(pv.created_at)
+      if (Number.isNaN(d.getTime())) return
+      const key = d.toISOString().slice(0, 10)
+      const bucket = indexByKey.get(key)
+      if (!bucket) return
+      bucket.pagesVues += 1
+      if (pv.session_id) bucket.sessions.add(pv.session_id)
+    })
+
+    return buckets.map(({ key, sessions, ...rest }) => ({
+      ...rest,
+      visiteurs: sessions.size,
+    }))
+  }, [pageViews])
 
   // Derived analytics from real-time data - Optimisé avec early return
   const { totalRevenue, totalOrders, totalCustomers, topProductsCalculated } = useMemo(() => {

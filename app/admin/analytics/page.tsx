@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils"
 import { useOrders } from "@/hooks/use-orders"
 import { useProducts } from "@/hooks/use-products"
 import { useCustomers } from "@/hooks/use-customers"
+import { usePageViews } from "@/hooks/use-page-views"
 
 // Using real data from API
 
@@ -35,6 +36,9 @@ export default function AnalyticsPage() {
   const { products } = useProducts()
   const { customers } = useCustomers()
 
+  const rangeDays = period === "7d" ? 7 : period === "30d" ? 30 : period === "3m" ? 90 : 365
+  const { pageViews } = usePageViews(rangeDays)
+
   useEffect(() => {
     if (orders.length > 0 || products.length > 0) {
       fetchAnalytics()
@@ -45,20 +49,73 @@ export default function AnalyticsPage() {
   const fetchAnalytics = async () => {
     try {
       setLoading(true)
-      // Simuler un délai réseau
-      await new Promise(resolve => setTimeout(resolve, 300))
+
+      const since = new Date()
+      since.setDate(since.getDate() - rangeDays)
+      const sinceTime = since.getTime()
 
       // Utiliser les données des hooks
       // Calculer le revenu total
-      const totalRevenue = orders
-        .filter(o => o.payment_status === 'paid' || o.status === 'completed')
-        .reduce((sum, o) => sum + parseFloat(o.total.toString()), 0)
+      const ordersInRange = orders.filter((o) => {
+        if (!o?.created_at) return false
+        const d = new Date(o.created_at)
+        if (Number.isNaN(d.getTime())) return false
+        return d.getTime() >= sinceTime
+      })
 
-      // Générer des données de revenu par période (mock)
-      const revenueData = Array.from({ length: 12 }, (_, i) => ({
-        month: new Date(2024, i).toLocaleDateString('fr-FR', { month: 'short' }),
-        revenue: Math.floor(totalRevenue / 12) + Math.random() * 1000,
-      }))
+      const totalRevenue = ordersInRange
+        .filter((o) => o.status !== "cancelled" && (o.payment_status === "paid" || o.status === "completed" || o.status === "processing"))
+        .reduce((sum, o) => sum + (Number(o.total) || 0), 0)
+
+      // Revenue data: par jour (<=30j) sinon par mois
+      const revenueData =
+        rangeDays <= 30
+          ? (() => {
+              const buckets = new Map<string, number>()
+              for (let i = rangeDays - 1; i >= 0; i--) {
+                const d = new Date()
+                d.setDate(d.getDate() - i)
+                const key = d.toISOString().slice(0, 10)
+                buckets.set(key, 0)
+              }
+              ordersInRange.forEach((o) => {
+                if (o.status === "cancelled") return
+                if (!(o.payment_status === "paid" || o.status === "completed" || o.status === "processing")) return
+                const d = new Date(o.created_at)
+                if (Number.isNaN(d.getTime())) return
+                const key = d.toISOString().slice(0, 10)
+                if (!buckets.has(key)) return
+                buckets.set(key, (buckets.get(key) || 0) + (Number(o.total) || 0))
+              })
+              return Array.from(buckets.entries()).map(([key, revenue]) => ({
+                month: new Date(key).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" }),
+                revenue,
+              }))
+            })()
+          : (() => {
+              const buckets = new Map<string, number>()
+              const start = new Date()
+              start.setMonth(start.getMonth() - 11)
+              start.setDate(1)
+              for (let i = 0; i < 12; i++) {
+                const d = new Date(start.getFullYear(), start.getMonth() + i, 1)
+                const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
+                buckets.set(key, 0)
+              }
+              ordersInRange.forEach((o) => {
+                if (o.status === "cancelled") return
+                if (!(o.payment_status === "paid" || o.status === "completed" || o.status === "processing")) return
+                const d = new Date(o.created_at)
+                if (Number.isNaN(d.getTime())) return
+                const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
+                if (!buckets.has(key)) return
+                buckets.set(key, (buckets.get(key) || 0) + (Number(o.total) || 0))
+              })
+              return Array.from(buckets.entries()).map(([key, revenue]) => ({
+                month: new Date(`${key}-01`).toLocaleDateString("fr-FR", { month: "short" }),
+                revenue,
+              }))
+            })()
 
       // Top catégories (basé sur les produits)
       const categoryCounts = products.reduce((acc, p) => {
@@ -77,23 +134,34 @@ export default function AnalyticsPage() {
         .sort((a, b) => b.count - a.count)
         .slice(0, 5)
 
-      // Top produits (basé sur les ventes estimées)
-      const topProducts = products
-        .map(p => ({
-          id: p.id,
-          name: p.name,
-          revenue: parseFloat(p.price.toString()) * (p.reviews || 0) * 0.1, // Estimation
-          sales: p.reviews || 0
-        }))
+      // Top produits (basé sur les ventes réelles via order_items)
+      const productAgg = new Map<string, { id: string; name: string; revenue: number; sales: number }>()
+      ordersInRange.forEach((o) => {
+        if (o.status === "cancelled") return
+        if (!(o.payment_status === "paid" || o.status === "completed" || o.status === "processing")) return
+        ;(o.order_items || []).forEach((it: any) => {
+          const id = it.product_id
+          if (!id) return
+          const name = it.product_name || products.find((p: any) => p.id === id)?.name || "Produit"
+          const qty = Number(it.quantity) || 0
+          const price = Number(it.price) || 0
+          const existing = productAgg.get(id) || { id, name, revenue: 0, sales: 0 }
+          existing.sales += qty
+          existing.revenue += qty * price
+          productAgg.set(id, existing)
+        })
+      })
+
+      const topProducts = Array.from(productAgg.values())
         .sort((a, b) => b.revenue - a.revenue)
         .slice(0, 5)
 
       const analyticsData = {
         stats: {
           totalRevenue,
-          totalOrders: orders.length,
+          totalOrders: ordersInRange.length,
           totalCustomers: customers.length,
-          pageViews: 12345, // Mock
+          pageViews: pageViews.length,
         },
         revenueData,
         topCategories,
