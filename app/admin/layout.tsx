@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, Suspense } from "react"
 import Link from "next/link"
+import Image from "next/image"
+import { motion } from "framer-motion"
 import { usePathname, useRouter } from "next/navigation"
 import {
   LayoutDashboard,
@@ -16,6 +18,8 @@ import {
   Bell,
   Search,
   Tag,
+  Loader2,
+  Sparkles,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -72,44 +76,69 @@ export default function AdminLayout({
         if (typeof window === 'undefined') return // Ne pas exécuter côté serveur
         
         // Récupérer les notifications lues depuis localStorage
-        const readNotifications = localStorage.getItem('readNotifications')
-        const readIds = readNotifications ? JSON.parse(readNotifications) as string[] : []
+        let readIds: string[] = []
+        try {
+          const readNotifications = localStorage.getItem('readNotifications')
+          if (readNotifications) {
+            readIds = JSON.parse(readNotifications) as string[]
+          }
+        } catch (localStorageError) {
+          // Ignorer les erreurs de localStorage silencieusement
+          readIds = []
+        }
         
         const { data: products, error } = await supabase
           .from('products')
           .select('stock, id')
           .limit(200)
 
-        if (error) {
-          console.error('Error fetching products for notifications:', error)
+        // Vérifier si l'erreur existe vraiment (pas juste un objet vide)
+        if (error && (error.message || Object.keys(error).length > 0)) {
+          // Seulement logger si c'est une vraie erreur avec un message
+          if (error.message) {
+            console.error('Error fetching products for notifications:', error.message)
+          }
           setNotificationCount(0)
           return
         }
 
-        if (!products || products.length === 0) {
+        // Si pas de données, retourner 0
+        if (!products || !Array.isArray(products) || products.length === 0) {
           setNotificationCount(0)
           return
         }
 
         // Compter seulement les notifications non lues
         let unreadCount = 0
-        products.forEach((p: any) => {
-          if (p.stock <= 0) {
-            const notificationId = `out-of-stock-${p.id}`
-            if (!readIds.includes(notificationId)) {
-              unreadCount++
+        try {
+          products.forEach((p: any) => {
+            // Vérifier que le produit a les propriétés nécessaires
+            if (!p || typeof p.stock !== 'number' || !p.id) return
+            
+            if (p.stock <= 0) {
+              const notificationId = `out-of-stock-${p.id}`
+              if (!readIds.includes(notificationId)) {
+                unreadCount++
+              }
+            } else if (p.stock <= 10) {
+              const notificationId = `low-stock-${p.id}`
+              if (!readIds.includes(notificationId)) {
+                unreadCount++
+              }
             }
-          } else if (p.stock <= 10) {
-            const notificationId = `low-stock-${p.id}`
-            if (!readIds.includes(notificationId)) {
-              unreadCount++
-            }
-          }
-        })
+          })
+        } catch (countError) {
+          // Ignorer les erreurs de comptage silencieusement
+          console.warn('Error counting notifications:', countError)
+        }
 
         setNotificationCount(unreadCount)
       } catch (error) {
-        console.error('Error calculating notification count:', error)
+        // Gérer toutes les erreurs silencieusement pour ne pas polluer la console
+        // Seulement logger si c'est une vraie erreur avec un message
+        if (error instanceof Error && error.message) {
+          console.error('Error in calculateNotificationCount:', error.message)
+        }
         setNotificationCount(0)
       }
     }
@@ -121,14 +150,16 @@ export default function AdminLayout({
       calculateNotificationCount()
     }
     
-    window.addEventListener('notificationsUpdated', handleNotificationsUpdate)
-    
-    // Rafraîchir toutes les 30 secondes
-    const interval = setInterval(calculateNotificationCount, 30000)
-    
-    return () => {
-      clearInterval(interval)
-      window.removeEventListener('notificationsUpdated', handleNotificationsUpdate)
+    if (typeof window !== 'undefined') {
+      window.addEventListener('notificationsUpdated', handleNotificationsUpdate)
+      
+      // Rafraîchir toutes les 30 secondes
+      const interval = setInterval(calculateNotificationCount, 30000)
+      
+      return () => {
+        clearInterval(interval)
+        window.removeEventListener('notificationsUpdated', handleNotificationsUpdate)
+      }
     }
   }, [user, pathname])
 
@@ -140,15 +171,295 @@ export default function AdminLayout({
   // Show a loading state until authentication is confirmed
   if (loading || !user || user.role !== 'admin') {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p>Chargement de l'administration...</p> {/* Or a spinner */}
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-secondary via-background to-secondary relative overflow-hidden">
+        {/* Animated background shapes */}
+        <div className="absolute inset-0 overflow-hidden">
+          <motion.div
+            className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-gradient-to-br from-accent/20 to-accent-rose/20 blur-3xl"
+            animate={{
+              x: [0, 100, 0],
+              y: [0, 50, 0],
+              scale: [1, 1.2, 1],
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
+          <motion.div
+            className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full bg-gradient-to-br from-accent-blue/20 to-accent/20 blur-3xl"
+            animate={{
+              x: [0, -100, 0],
+              y: [0, -50, 0],
+              scale: [1, 1.2, 1],
+            }}
+            transition={{
+              duration: 10,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
+        </div>
+
+        {/* Main loading content */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="relative z-10 flex flex-col items-center justify-center gap-8"
+        >
+          {/* Logo container with premium animation */}
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="relative"
+          >
+            {/* Outer glow ring */}
+            <motion.div
+              className="absolute inset-0 rounded-3xl"
+              animate={{
+                boxShadow: [
+                  "0 0 0px rgba(220, 178, 101, 0.3)",
+                  "0 0 40px rgba(220, 178, 101, 0.5)",
+                  "0 0 0px rgba(220, 178, 101, 0.3)",
+                ],
+              }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            />
+            
+            {/* Main logo container */}
+            <motion.div
+              animate={{
+                rotate: [0, 2, -2, 0],
+              }}
+              transition={{
+                duration: 6,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+              className="relative"
+            >
+              <div className="w-40 h-40 rounded-3xl bg-gradient-to-br from-accent via-accent-rose to-accent-blue p-1.5 shadow-2xl relative overflow-hidden">
+                {/* Animated gradient border */}
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-accent via-accent-rose via-accent-blue to-accent"
+                  style={{
+                    backgroundSize: "200% 200%",
+                  }}
+                  animate={{
+                    backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
+                  }}
+                  transition={{
+                    duration: 4,
+                    repeat: Infinity,
+                    ease: "linear",
+                  }}
+                />
+                
+                {/* Inner container with glassmorphism */}
+                <div className="w-full h-full rounded-3xl bg-background/95 backdrop-blur-2xl flex items-center justify-center relative z-10 border border-white/10">
+                  <motion.div
+                    animate={{
+                      scale: [1, 1.05, 1],
+                      opacity: [0.9, 1, 0.9],
+                    }}
+                    transition={{
+                      duration: 2.5,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                    className="relative"
+                  >
+                    <Image
+                      src="/logo.png"
+                      alt="Tonomi Logo"
+                      width={200}
+                      height={93}
+                      className="h-24 w-auto drop-shadow-lg"
+                      priority
+                    />
+                    
+                    {/* Shine effect */}
+                    <motion.div
+                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                      style={{
+                        transform: "skewX(-20deg)",
+                      }}
+                      animate={{
+                        x: ["-100%", "200%"],
+                      }}
+                      transition={{
+                        duration: 3,
+                        repeat: Infinity,
+                        repeatDelay: 1,
+                        ease: "easeInOut",
+                      }}
+                    />
+                  </motion.div>
+                </div>
+              </div>
+            </motion.div>
+            
+            {/* Floating particles around logo */}
+            {[
+              { top: "-10%", left: "10%", delay: 0, size: "w-1.5 h-1.5" },
+              { top: "20%", left: "-5%", delay: 0.3, size: "w-2 h-2" },
+              { top: "80%", left: "15%", delay: 0.6, size: "w-1.5 h-1.5" },
+              { top: "10%", left: "90%", delay: 0.2, size: "w-2 h-2" },
+              { top: "70%", left: "85%", delay: 0.4, size: "w-1.5 h-1.5" },
+              { top: "50%", left: "-8%", delay: 0.5, size: "w-2 h-2" },
+            ].map((particle, i) => (
+              <motion.div
+                key={i}
+                className={cn(
+                  "absolute rounded-full bg-gradient-to-br from-accent to-accent-rose",
+                  particle.size
+                )}
+                style={{
+                  top: particle.top,
+                  left: particle.left,
+                }}
+                animate={{
+                  y: [0, -30, 0],
+                  x: [0, 15, 0],
+                  opacity: [0.4, 1, 0.4],
+                  scale: [0.8, 1.3, 0.8],
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  delay: particle.delay,
+                  ease: "easeInOut",
+                }}
+              />
+            ))}
+          </motion.div>
+
+          {/* Loading text with gradient */}
+          <div className="text-center space-y-4">
+            <motion.h2
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.5, ease: "easeOut" }}
+              className="text-3xl font-bold bg-gradient-to-r from-foreground via-accent to-foreground bg-clip-text text-transparent bg-[length:200%_auto] animate-[shimmer_3s_linear_infinite]"
+            >
+              Chargement de l'administration
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5, duration: 0.5 }}
+              className="text-muted-foreground flex items-center justify-center gap-2 text-base"
+            >
+              <motion.span
+                animate={{ opacity: [0.6, 1, 0.6] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              >
+                Veuillez patienter
+              </motion.span>
+              <motion.span
+                animate={{ opacity: [0, 1, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+              >
+                ...
+              </motion.span>
+            </motion.p>
+          </div>
+
+          {/* Premium loading spinner */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.4, duration: 0.5 }}
+            className="relative w-16 h-16"
+          >
+            {/* Outer rotating ring */}
+            <motion.div
+              className="absolute inset-0 border-4 border-transparent border-t-accent border-r-accent-rose rounded-full"
+              animate={{ rotate: 360 }}
+              transition={{
+                duration: 1.5,
+                repeat: Infinity,
+                ease: "linear",
+              }}
+            />
+            {/* Inner rotating ring */}
+            <motion.div
+              className="absolute inset-2 border-4 border-transparent border-b-accent-blue border-l-accent rounded-full"
+              animate={{ rotate: -360 }}
+              transition={{
+                duration: 1,
+                repeat: Infinity,
+                ease: "linear",
+              }}
+            />
+            {/* Center dot */}
+            <motion.div
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-gradient-to-br from-accent to-accent-rose"
+              animate={{
+                scale: [1, 1.3, 1],
+                opacity: [0.8, 1, 0.8],
+              }}
+              transition={{
+                duration: 1.5,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            />
+          </motion.div>
+
+          {/* Premium progress indicator */}
+          <motion.div
+            initial={{ opacity: 0, width: 0 }}
+            animate={{ opacity: 1, width: "auto" }}
+            transition={{ delay: 0.6 }}
+            className="flex items-center gap-3"
+          >
+            {[...Array(3)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="w-3 h-3 rounded-full bg-gradient-to-br from-accent to-accent-rose shadow-lg"
+                animate={{
+                  scale: [1, 1.6, 1],
+                  opacity: [0.5, 1, 0.5],
+                  y: [0, -8, 0],
+                }}
+                transition={{
+                  duration: 1.8,
+                  repeat: Infinity,
+                  delay: i * 0.25,
+                  ease: "easeInOut",
+                }}
+              />
+            ))}
+          </motion.div>
+        </motion.div>
       </div>
     )
   }
 
   const handleLogout = async () => {
-    await logout()
-    router.push('/admin/login')
+    try {
+      await logout()
+      // Nettoyer le localStorage si nécessaire
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('readNotifications')
+      }
+      // Rediriger vers la page de login
+      router.push('/admin/login')
+      // Forcer un rechargement pour s'assurer que l'état est réinitialisé
+      router.refresh()
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error)
+      // Même en cas d'erreur, rediriger vers la page de login
+      router.push('/admin/login')
+    }
   }
 
   return (
@@ -171,14 +482,21 @@ export default function AdminLayout({
         >
           <div className="flex flex-col h-full">
             {/* Logo */}
-            <div className="flex items-center justify-between h-16 px-6 border-b border-background/10">
-              <Link href="/admin" className="text-xl font-bold tracking-tight">
-                Tonomi Admin
+            <div className="flex items-center justify-center h-24 px-6 border-b border-background/10 relative">
+              <Link href="/admin" className="flex items-center justify-center">
+                <Image
+                  src="/logo.png"
+                  alt="Tonomi Logo"
+                  width={240}
+                  height={112}
+                  className="h-20 w-auto"
+                  priority
+                />
               </Link>
               <Button
                 variant="ghost"
                 size="icon"
-                className="lg:hidden text-background hover:bg-background/10"
+                className="lg:hidden text-background hover:bg-background/10 absolute right-4"
                 onClick={() => setSidebarOpen(false)}
               >
                 <X className="w-5 h-5" />
@@ -210,35 +528,14 @@ export default function AdminLayout({
 
             {/* User section */}
             <div className="p-4 border-t border-background/10">
-              <div className="flex items-center gap-3 px-4 py-3">
-                <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center text-accent-foreground font-semibold">
-                  {user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'A'}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-background truncate">
-                    {user?.name || 'Admin User'}
-                  </p>
-                  <p className="text-xs text-background/60 truncate">
-                    {user?.email || 'admin@tonomi.com'}
-                  </p>
-                </div>
-              </div>
               <Button
                 variant="ghost"
                 onClick={handleLogout}
-                className="w-full justify-start gap-3 mt-2 text-background/70 hover:bg-background/10 hover:text-background"
+                className="w-full justify-start gap-3 text-background/70 hover:bg-background/10 hover:text-background"
               >
                 <LogOut className="w-5 h-5" />
                 Déconnexion
               </Button>
-              <Link href="/">
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start gap-3 mt-2 text-background/70 hover:bg-background/10 hover:text-background"
-                >
-                  Retour à la boutique
-                </Button>
-              </Link>
             </div>
           </div>
         </aside>

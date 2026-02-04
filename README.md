@@ -1,7 +1,18 @@
-<<<<<<< HEAD
-# E-commerce Fashion Website - Frontend-Only
+# EcomTonomi - E-commerce Fashion Website
 
 Application e-commerce complète avec dashboard administrateur, construite avec Next.js 16 et TypeScript. Ce projet utilise Supabase comme solution "backend-as-a-service" pour la persistance des données principales et l'authentification.
+
+## 📁 Structure du Projet
+
+- `app/` - Application Next.js (pages et routes)
+- `components/` - Composants React réutilisables
+- `context/` - Contextes React (Auth, Cart)
+- `hooks/` - Hooks React personnalisés
+- `lib/` - Utilitaires et clients (Supabase)
+- `public/` - Assets statiques (images, logos)
+- `scripts/` - Scripts utilitaires
+- `docs/` - Documentation technique et guides (voir [docs/README.md](docs/README.md))
+- `sql/` - Scripts SQL pour la base de données Supabase (voir [sql/README.md](sql/README.md))
 
 ## 🚀 Fonctionnalités
 

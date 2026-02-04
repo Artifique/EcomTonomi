@@ -9,7 +9,7 @@ const banners = [
     subtitle: "Découvrez les dernières tendances de la mode masculine",
     image: "https://images.unsplash.com/photo-1617137968427-85924c800a22?q=80&w=1974&auto=format&fit=crop",
     href: "/shop?category=men",
-    bgColor: "bg-[#C2A8A6]",
+    bgColor: "bg-accent-rose",
   },
   {
     id: 2,
@@ -17,7 +17,7 @@ const banners = [
     subtitle: "Pièces élégantes pour toutes les occasions",
     image: "https://images.unsplash.com/photo-1469334031218-e382a71b716b?q=80&w=2070&auto=format&fit=crop",
     href: "/shop?category=women",
-    bgColor: "bg-[#184D6B]",
+    bgColor: "bg-accent-blue",
   },
 ]
 
@@ -28,7 +28,7 @@ export function PromotionalBanners() {
         {banners.map((banner) => (
           <div
             key={banner.id}
-            className={`relative overflow-hidden rounded-2xl ${banner.bgColor} group`}
+            className={`relative overflow-hidden rounded-xl ${banner.bgColor} group`}
           >
             <div className="grid grid-cols-2 items-center min-h-[200px] lg:min-h-[240px]">
               {/* Content */}

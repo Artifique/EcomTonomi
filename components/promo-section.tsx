@@ -5,8 +5,8 @@ import { ArrowRight } from "lucide-react"
 export function PromoSection() {
   return (
     <section className="container mx-auto px-4 py-12 lg:py-16">
-      <div className="relative overflow-hidden rounded-3xl bg-accent">
-        <div className="relative z-10 flex flex-col items-center justify-center text-center px-6 py-16 lg:py-24">
+      <div className="relative overflow-hidden rounded-xl bg-accent">
+        <div className="relative z-10 flex flex-col items-center justify-center text-center px-6 py-16">
           <span className="inline-block px-4 py-1.5 mb-4 text-xs font-medium tracking-wider uppercase bg-white/20 text-foreground rounded-full">
             Temps limité
           </span>

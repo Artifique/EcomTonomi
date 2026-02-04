@@ -5,6 +5,7 @@ import { CategoriesSection } from "@/components/categories-section"
 import { PopularProducts } from "@/components/popular-products"
 import { PromoSection } from "@/components/promo-section"
 import { CustomerReviews } from "@/components/customer-reviews"
+import { WorldMapSection } from "@/components/world-map-section"
 import { Footer } from "@/components/footer"
 
 export default function HomePage() {
@@ -18,6 +19,7 @@ export default function HomePage() {
         <PopularProducts />
         <PromoSection />
         <CustomerReviews />
+        <WorldMapSection />
       </main>
       <Footer />
     </div>

@@ -1,5 +1,9 @@
+"use client"
+
 import Image from "next/image"
 import { Star } from "lucide-react"
+import { AnimatedCounter } from "@/components/animated-counter"
+import { motion } from "framer-motion"
 
 const reviews = [
   {
@@ -30,7 +34,7 @@ export function CustomerReviews() {
     <section className="container mx-auto px-4 py-12 lg:py-16">
       <div className="text-center mb-12">
         <h2 className="text-2xl lg:text-3xl font-bold text-foreground mb-2">
-          350+ Avis clients
+          <AnimatedCounter value={350} prefix="" suffix="+ Avis clients" />
         </h2>
         <p className="text-muted-foreground">
           Découvrez ce que nos clients disent de nous
@@ -62,10 +66,13 @@ export function CustomerReviews() {
 
       {/* Reviews Grid */}
       <div className="grid md:grid-cols-3 gap-6">
-        {reviews.map((review) => (
-          <div
+        {reviews.map((review, index) => (
+          <motion.div
             key={review.id}
-            className="bg-secondary rounded-2xl p-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1, duration: 0.5, ease: "easeOut" }}
+            className="bg-secondary rounded-xl p-6"
           >
             <div className="flex items-center gap-3 mb-4">
               <div className="relative w-12 h-12 rounded-full overflow-hidden">
@@ -91,7 +98,7 @@ export function CustomerReviews() {
             <p className="text-muted-foreground text-sm leading-relaxed">
               &quot;{review.comment}&quot;
             </p>
-          </div>
+          </motion.div>
         ))}
       </div>
     </section>

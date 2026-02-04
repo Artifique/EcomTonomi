@@ -217,7 +217,7 @@ export default function AnalyticsPage() {
           <Card key={stat.title} className="border-0 shadow-sm">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center", stat.color)}>
+                <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center", stat.color)}>
                   <stat.icon className="w-6 h-6" />
                 </div>
                 <div

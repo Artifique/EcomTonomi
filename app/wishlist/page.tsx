@@ -74,7 +74,7 @@ export default function WishlistPage() {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6">
               {wishlist.map((item) => (
                 <div key={item.product.id} className="group">
-                  <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-secondary mb-3">
+                  <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-secondary mb-3">
                     <Link href={`/product/${item.product.id}`}>
                       <Image
                         src={item.product.images[0] || "/placeholder.svg"}

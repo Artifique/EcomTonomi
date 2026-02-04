@@ -23,6 +23,7 @@ import { useCart } from "@/context/cart-context"
 
 import { useRouter } from "next/navigation" // Import useRouter
 import { useAuth } from "@/context/auth-context" // Import useAuth
+import { SearchBar } from "@/components/search-bar"
 
 const navLinks = [
   { name: "Boutique", href: "/shop" },
@@ -114,14 +115,7 @@ export function Header() {
 
           {/* Search Bar - Desktop */}
           <div className="hidden md:flex flex-1 max-w-md mx-4">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Rechercher des produits..."
-                className="w-full pl-10 bg-secondary border-0 rounded-full"
-              />
-            </div>
+            <SearchBar onClose={() => setIsSearchOpen(false)} />
           </div>
 
           {/* Icons */}
@@ -193,15 +187,7 @@ export function Header() {
         {/* Mobile Search Bar */}
         {isSearchOpen && (
           <div className="md:hidden pb-4">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Rechercher des produits..."
-                className="w-full pl-10 bg-secondary border-0 rounded-full"
-                autoFocus
-              />
-            </div>
+            <SearchBar onClose={() => setIsSearchOpen(false)} />
           </div>
         )}
         </div>

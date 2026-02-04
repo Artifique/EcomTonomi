@@ -74,7 +74,7 @@ export default function DashboardPage() {
             {/* Sidebar */}
             <aside className="lg:col-span-1">
               {/* User Info */}
-              <div className="flex items-center gap-4 mb-6 p-4 bg-secondary rounded-2xl">
+              <div className="flex items-center gap-4 mb-6 p-4 bg-secondary rounded-xl">
                 <div className="relative w-14 h-14 rounded-full overflow-hidden">
                   <Image
                     src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=2070&auto=format&fit=crop" // Placeholder avatar
@@ -151,7 +151,7 @@ function ProfileSection({ user, firstName, lastName }: { user: User, firstName: 
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   return (
-    <div className="bg-secondary rounded-2xl p-6">
+    <div className="bg-secondary rounded-xl p-6">
       <h2 className="text-xl font-semibold text-foreground mb-6">Informations du profil</h2>
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
@@ -286,7 +286,7 @@ function OrdersSection({ orders, error }: { orders: Order[], error: string | nul
         <p className="text-muted-foreground">Vous n'avez pas encore passé de commandes.</p>
       ) : (
         orders.map((order) => (
-          <div key={order.id} className="bg-secondary rounded-2xl p-6">
+          <div key={order.id} className="bg-secondary rounded-xl p-6">
             <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
               <div>
                 <p className="font-semibold text-foreground">{order.id}</p>
@@ -389,7 +389,7 @@ function WishlistSection() {
     <div className="space-y-4">
       <h2 className="text-xl font-semibold text-foreground mb-4">Ma liste de souhaits</h2>
       {wishlist.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-8 text-center bg-secondary rounded-2xl p-6">
+        <div className="flex flex-col items-center justify-center py-8 text-center bg-secondary rounded-xl p-6">
           <div className="w-20 h-20 rounded-full bg-background flex items-center justify-center mb-4">
             <Heart className="w-8 h-8 text-muted-foreground" />
           </div>
@@ -412,7 +412,7 @@ function WishlistSection() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {wishlist.map((item) => (
-            <div key={item.product.id} className="bg-secondary rounded-2xl p-4 flex items-center gap-4 group">
+            <div key={item.product.id} className="bg-secondary rounded-xl p-4 flex items-center gap-4 group">
               <div className="relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
                 <Image
                   src={item.product.images[0] || "/placeholder.svg"}
@@ -500,7 +500,7 @@ function AddressesSection() {
     <div className="space-y-4">
       <h2 className="text-xl font-semibold text-foreground mb-4">Adresses enregistrées</h2>
       {addresses.length === 0 ? (
-        <div className="bg-secondary rounded-2xl p-6 text-center">
+        <div className="bg-secondary rounded-xl p-6 text-center">
           <p className="text-muted-foreground mb-4">Vous n'avez pas encore d'adresses enregistrées.</p>
           <Button
             onClick={() => {
@@ -517,7 +517,7 @@ function AddressesSection() {
       ) : (
         <>
           {addresses.map((address) => (
-            <div key={address.id} className="bg-secondary rounded-2xl p-6">
+            <div key={address.id} className="bg-secondary rounded-xl p-6">
               <div className="flex items-start justify-between">
                 <div>
                   <p className="font-medium text-foreground">
@@ -855,7 +855,7 @@ function PaymentSection() {
     <div className="space-y-4">
       <h2 className="text-xl font-semibold text-foreground mb-4">Moyens de paiement</h2>
       {paymentMethods.length === 0 ? (
-        <div className="bg-secondary rounded-2xl p-6 text-center">
+        <div className="bg-secondary rounded-xl p-6 text-center">
           <p className="text-muted-foreground mb-4">Vous n'avez pas encore de moyens de paiement enregistrés.</p>
           <Button
             onClick={() => {
@@ -872,7 +872,7 @@ function PaymentSection() {
       ) : (
         <>
           {paymentMethods.map((method) => (
-            <div key={method.id} className="bg-secondary rounded-2xl p-6">
+            <div key={method.id} className="bg-secondary rounded-xl p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="px-3 py-2 bg-background rounded text-sm font-medium text-foreground">
@@ -1187,7 +1187,7 @@ function SettingsSection() {
   }
 
   return (
-    <div className="bg-secondary rounded-2xl p-6">
+    <div className="bg-secondary rounded-xl p-6">
       <h2 className="text-xl font-semibold text-foreground mb-6">Paramètres du compte</h2>
       <div className="space-y-4">
         <div className="flex items-center justify-between py-3 border-b border-border">

@@ -3,26 +3,30 @@
 import { useState } from "react"
 import Image from "next/image"
 import { motion, AnimatePresence } from "framer-motion"
-import { X, Heart, ShoppingBag } from "lucide-react"
+import { X, Heart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
+import type { Product } from "@/hooks/use-products"
+import { AddToCartButton } from "@/components/add-to-cart-animation"
+import { useCart } from "@/context/cart-context"
 
 interface QuickViewModalProps {
-  product: {
-    id: number
-    name: string
-    price: number
-    image: string
-    category: string
-    isNew?: boolean
-  }
+  product: Product & { category?: string }
   isOpen: boolean
   onClose: () => void
 }
 
 export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps) {
   const [isFavorite, setIsFavorite] = useState(false)
+  const { addItem } = useCart()
+
+  // Get the first image from the images array, or use a placeholder
+  // Filter out empty strings and null values
+  const firstImage = product.images && product.images.length > 0 
+    ? product.images.find(img => img && img.trim() !== '') 
+    : null
+  const productImage = firstImage || "/placeholder.svg"
 
   return (
     <AnimatePresence>
@@ -38,14 +42,16 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
             >
               {/* Image */}
               <div className="relative aspect-square bg-secondary">
-                <Image
-                  src={product.image}
-                  alt={product.name}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                />
-                {product.isNew && (
+                {productImage && (
+                  <Image
+                    src={productImage}
+                    alt={product.name}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                  />
+                )}
+                {product.is_new && (
                   <span className="absolute top-4 left-4 px-3 py-1 text-xs font-semibold tracking-wider uppercase bg-accent text-accent-foreground rounded-full">
                     Nouveau
                   </span>
@@ -62,22 +68,35 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
               {/* Content */}
               <div className="p-6 md:p-8 flex flex-col justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground mb-2">{product.category}</p>
+                  {product.category && (
+                    <p className="text-sm text-muted-foreground mb-2">{product.category}</p>
+                  )}
                   <DialogHeader>
                     <DialogTitle className="text-2xl font-bold text-foreground mb-2">{product.name}</DialogTitle>
-                    <DialogDescription className="text-sm text-muted-foreground">{product.category}</DialogDescription>
+                    {product.category && (
+                      <DialogDescription className="text-sm text-muted-foreground">{product.category}</DialogDescription>
+                    )}
                   </DialogHeader>
-                  <p className="text-3xl font-bold text-foreground mb-6">FCFA {product.price}</p>
+                  <p className="text-2xl font-bold text-foreground mb-6">FCFA {product.price}</p>
                 </div>
 
                 <div className="space-y-3">
-                  <Button
-                    size="lg"
-                    className="w-full bg-foreground text-background hover:bg-foreground/90"
-                  >
-                    <ShoppingBag className="w-4 h-4 mr-2" />
-                    Ajouter au panier
-                  </Button>
+                  <AddToCartButton
+                    product={{
+                      id: product.id,
+                      name: product.name,
+                      image: product.images?.[0],
+                      price: product.price,
+                    }}
+                    onAdd={async () => {
+                      await addItem(
+                        product,
+                        1,
+                        product.sizes?.[0] || "M",
+                        product.colors?.[0] || { name: "Default", value: "#000" }
+                      )
+                    }}
+                  />
                   <Button
                     variant="outline"
                     size="lg"
@@ -86,8 +105,8 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
                   >
                     <Heart
                       className={cn(
-                        "w-4 h-4 mr-2",
-                        isFavorite && "fill-red-500 text-red-500"
+                        "w-4 h-4 mr-2 transition-all",
+                        isFavorite && "fill-red-500 text-red-500 scale-110"
                       )}
                     />
                     {isFavorite ? "Retiré des favoris" : "Ajouter aux favoris"}

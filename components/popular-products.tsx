@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils"
 import { QuickViewModal } from "@/components/quick-view-modal"
 import { useProducts, type Product } from "@/hooks/use-products"
 import { useCategories } from "@/hooks/use-categories"
+import { ProductSkeletonGrid } from "@/components/product-skeleton"
 
 export function PopularProducts() {
   // Use category slug for filter, then find ID
@@ -56,8 +57,13 @@ export function PopularProducts() {
   // Handle loading states
   if (productsLoading || categoriesLoading) {
     return (
-      <section className="container mx-auto px-4 py-12 lg:py-16 text-center">
-        <p className="text-muted-foreground">Chargement des produits...</p>
+      <section className="container mx-auto px-4 py-12 lg:py-16">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+          <h2 className="text-2xl lg:text-3xl font-bold text-foreground">
+            Produits populaires
+          </h2>
+        </div>
+        <ProductSkeletonGrid count={8} />
       </section>
     )
   }
@@ -97,13 +103,13 @@ export function PopularProducts() {
             key={product.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1, duration: 0.4 }}
+            transition={{ delay: index * 0.1, duration: 0.4, ease: "easeOut" }}
             className="group"
             onMouseEnter={() => setHoveredProduct(product.id)}
             onMouseLeave={() => setHoveredProduct(null)}
           >
-            <Link href={`/product/${product.id}`}>
-              <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-secondary mb-3">
+            <Link href={`/product/${product.id}`} className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-xl block">
+              <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-secondary mb-3">
                 <Image
                   src={product.images?.[0] || "/placeholder.svg"} // Use first image from array
                   alt={product.name}
@@ -130,7 +136,7 @@ export function PopularProducts() {
                     opacity: hoveredProduct === product.id ? 1 : 0,
                     scale: hoveredProduct === product.id ? 1.05 : 1
                   }}
-                  transition={{ duration: 0.3 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
                   className="absolute inset-0 bg-black/20 backdrop-blur-[2px] flex items-center justify-center gap-2"
                 >
                   <Button
@@ -148,7 +154,7 @@ export function PopularProducts() {
                 <button
                   type="button"
                   onClick={(e) => toggleFavorite(product.id, e)}
-                  className="absolute top-3 right-3 p-2 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white transition-colors z-10"
+                  className="absolute top-3 right-3 p-3 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white transition-colors z-10 min-w-[44px] min-h-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   aria-label={
                     favorites.includes(product.id)
                       ? "Retirer des favoris"
@@ -179,7 +185,10 @@ export function PopularProducts() {
       {/* Quick View Modal */}
       {quickViewProduct && (
         <QuickViewModal
-          product={quickViewProduct}
+          product={{
+            ...quickViewProduct,
+            category: categories.find(cat => cat.id === quickViewProduct.category_id)?.name
+          }}
           isOpen={!!quickViewProduct}
           onClose={() => setQuickViewProduct(null)}
         />

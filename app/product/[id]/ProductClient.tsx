@@ -137,7 +137,7 @@ export function ProductDetail({ product }: { product: Product }) {
               </span>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-3xl font-bold text-foreground">FCFA {product.price}</span>
+              <span className="text-2xl font-bold text-foreground">FCFA {product.price}</span>
               {product.original_price && (
                 <span className="text-xl text-muted-foreground line-through">FCFA {product.original_price}</span>
               )}
@@ -208,7 +208,7 @@ export function RelatedProducts({ products }: { products: Product[] }) {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 lg:gap-6">
         {products.map((product) => (
           <Link key={product.id} href={`/product/${product.id}`} className="group">
-            <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-secondary mb-3">
+            <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-secondary mb-3">
               <Image src={product.images?.[0] && product.images[0] !== '' ? product.images[0] : "/placeholder.svg"} alt={product.name} fill className="object-cover object-center group-hover:scale-105 transition-transform duration-500" />
               {product.is_new && (
                 <span className="absolute top-3 left-3 px-2 py-1 text-[10px] font-semibold tracking-wider uppercase bg-accent text-accent-foreground rounded-full">

@@ -76,7 +76,7 @@ export function HeroSection() {
   return (
     <section className="container mx-auto px-4 py-6 lg:py-8">
       <div
-        className="relative overflow-hidden rounded-3xl bg-secondary"
+        className="relative overflow-hidden rounded-xl bg-secondary"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
         {...swipeHandlers}
@@ -87,20 +87,20 @@ export function HeroSection() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
             className="grid lg:grid-cols-2 gap-8 items-center"
           >
             {/* Content */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.6 }}
-              className="p-8 lg:p-12 xl:p-16 relative z-10"
+              transition={{ delay: 0.2, duration: 0.6, ease: "easeOut" }}
+              className="p-6 lg:p-8 xl:p-12 relative z-10"
             >
               <motion.span
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.3, duration: 0.4 }}
+                transition={{ delay: 0.3, duration: 0.4, ease: "easeOut" }}
                 className="inline-block px-4 py-1.5 mb-4 text-xs font-medium tracking-wider uppercase bg-accent/20 text-foreground rounded-full"
               >
                 {currentSlideData.badge}
@@ -108,15 +108,15 @@ export function HeroSection() {
               <motion.h1
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4, duration: 0.6 }}
-                className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight text-foreground mb-6 text-balance"
+                transition={{ delay: 0.4, duration: 0.6, ease: "easeOut" }}
+                className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground mb-6 text-balance"
               >
                 {currentSlideData.title}
               </motion.h1>
               <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5, duration: 0.6 }}
+                transition={{ delay: 0.5, duration: 0.6, ease: "easeOut" }}
                 className="text-muted-foreground text-lg lg:text-xl max-w-md mb-8 text-pretty"
               >
                 {currentSlideData.description}
@@ -124,7 +124,7 @@ export function HeroSection() {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6, duration: 0.6 }}
+                transition={{ delay: 0.6, duration: 0.6, ease: "easeOut" }}
               >
                 <Link href={currentSlideData.link}>
                   <Button
@@ -142,7 +142,7 @@ export function HeroSection() {
             <motion.div
               initial={{ opacity: 0, scale: 1.1 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
               className="relative h-[400px] lg:h-[500px] xl:h-[600px] overflow-hidden"
             >
               <motion.div
@@ -171,14 +171,14 @@ export function HeroSection() {
         {/* Navigation buttons */}
         <button
           onClick={prevSlide}
-          className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background transition-colors shadow-lg"
+          className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background transition-colors shadow-lg min-w-[44px] min-h-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           aria-label="Slide précédent"
         >
           <ChevronLeft className="w-6 h-6" />
         </button>
         <button
           onClick={nextSlide}
-          className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background transition-colors shadow-lg"
+          className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background transition-colors shadow-lg min-w-[44px] min-h-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           aria-label="Slide suivant"
         >
           <ChevronRight className="w-6 h-6" />
@@ -191,7 +191,7 @@ export function HeroSection() {
               key={index}
               onClick={() => goToSlide(index)}
               className={`
-                h-2 rounded-full transition-all duration-300
+                h-3 rounded-full transition-all duration-300 min-w-[44px] min-h-[44px] flex items-center justify-center p-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
                 ${index === currentSlide ? 'w-8 bg-foreground' : 'w-2 bg-foreground/40 hover:bg-foreground/60'}
               `}
               aria-label={`Aller au slide ${index + 1}`}

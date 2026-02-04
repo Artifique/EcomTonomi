@@ -45,7 +45,7 @@ export default function CartPage() {
                 {items.map((item) => (
                   <div
                     key={`${item.product_id}-${item.size}-${item.color.name}`}
-                    className="flex gap-4 p-4 bg-secondary rounded-2xl"
+                    className="flex gap-4 p-4 bg-secondary rounded-xl"
                   >
                     {/* Product Image */}
                     <Link href={`/product/${item.product_id}`}>
@@ -129,7 +129,7 @@ export default function CartPage() {
 
               {/* Order Summary */}
               <div className="lg:col-span-1">
-                <div className="sticky top-24 bg-secondary rounded-2xl p-6">
+                <div className="sticky top-24 bg-secondary rounded-xl p-6">
                   <h2 className="text-lg font-semibold text-foreground mb-6">
                     Résumé de la commande
                   </h2>

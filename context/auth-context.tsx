@@ -5,10 +5,10 @@ import { supabase } from "@/lib/supabaseClient"
 import type { User as SupabaseUser } from "@supabase/supabase-js"
 
 // Combinaison de l'utilisateur Supabase Auth et de notre table de profils
-export interface User extends SupabaseUser {
+export interface User extends Omit<SupabaseUser, 'phone'> {
   role: string
   name: string | null
-  phone: string | null // Ajout du champ phone
+  phone: string | null | undefined // Compatible avec SupabaseUser.phone (string | undefined)
   email_notifications_enabled: boolean // Ajout du champ pour les notifications
 }
 
@@ -99,38 +99,97 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         data: {
           name: name || '',
         },
+        emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/account/dashboard` : undefined,
       },
     })
 
     if (authError) {
-      console.error("Erreur lors de l'inscription de l'utilisateur:", authError); // Ajout d'un log
+      console.error("Erreur lors de l'inscription de l'utilisateur:", authError)
+      
+      // Gérer spécifiquement l'erreur de limite d'email
+      if (authError.message?.includes('email rate limit exceeded') || authError.message?.includes('rate limit')) {
+        return { 
+          success: false, 
+          error: "Limite d'envoi d'e-mails dépassée. Veuillez réessayer dans quelques minutes ou désactivez la confirmation d'email dans Supabase pour le développement." 
+        }
+      }
+      
       return { success: false, error: authError.message }
     }
     if (!authData.user) {
         return { success: false, error: "L'utilisateur n'a pas été créé." }
     }
 
-    // Créer un profil pour le nouvel utilisateur
+    // Essayer de créer un profil pour le nouvel utilisateur
+    // Note: Si un trigger automatique existe dans Supabase, cette insertion peut échouer
+    // avec une erreur de duplication, ce qui est acceptable
     const { error: profileError } = await supabase.from('profiles').insert({
       id: authData.user.id,
       name: name || null,
       role: 'customer',
-      phone: null, // Initialiser le phone à null lors de l'inscription
-      email_notifications_enabled: true, // Initialiser les notifications à true par défaut
+      phone: null,
+      email_notifications_enabled: true,
     })
 
     if (profileError) {
-        // Idéalement, il faudrait supprimer l'utilisateur authentifié si le profil échoue
-        console.error("Erreur lors de la création du profil:", profileError)
-        return { success: false, error: "Erreur lors de la création du profil utilisateur." }
+        // Si l'erreur est due à une duplication (le trigger a déjà créé le profil), c'est OK
+        const isDuplicateError = profileError.code === '23505' || 
+                                 profileError.message?.includes('duplicate') ||
+                                 profileError.message?.includes('already exists')
+        
+        if (isDuplicateError) {
+          console.log("Le profil existe déjà (probablement créé par un trigger), c'est normal.")
+          return { success: true }
+        }
+
+        // Pour les autres erreurs, on les log et on retourne l'erreur
+        console.error("Erreur lors de la création du profil:", {
+          error: profileError,
+          message: profileError.message,
+          details: profileError.details,
+          hint: profileError.hint,
+          code: profileError.code
+        })
+        
+        // Attendre un peu et vérifier si le profil existe quand même (au cas où le trigger l'aurait créé)
+        await new Promise(resolve => setTimeout(resolve, 500))
+        const { data: existingProfile } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', authData.user.id)
+          .single()
+        
+        if (existingProfile) {
+          console.log("Le profil existe finalement, l'inscription est réussie.")
+          return { success: true }
+        }
+
+        return { 
+          success: false, 
+          error: profileError.message || "Erreur lors de la création du profil utilisateur." 
+        }
     }
 
     return { success: true }
   }
 
   const logout = async () => {
-    await supabase.auth.signOut()
-    setUser(null)
+    try {
+      const { error } = await supabase.auth.signOut()
+      if (error) {
+        console.error('Erreur lors de la déconnexion:', error)
+        // Même en cas d'erreur, on nettoie l'état local
+      }
+      setUser(null)
+      // Nettoyer le localStorage si nécessaire
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('readNotifications')
+      }
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error)
+      // Même en cas d'erreur, on nettoie l'état local
+      setUser(null)
+    }
   }
 
   const updateUserProfile = async (updates: { name?: string | null; phone?: string | null }) => {
@@ -212,4 +271,3 @@ export function useAuth() {
   }
   return context
 }
-

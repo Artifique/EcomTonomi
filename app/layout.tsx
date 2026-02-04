@@ -6,6 +6,7 @@ import { ToastProvider } from '@/components/ToastProvider'
 import { CartProvider } from '@/context/cart-context'
 import { AuthProvider } from '@/context/auth-context'
 import { PageTransition } from '@/components/page-transition'
+import { ScrollProgress } from '@/components/scroll-progress'
 import './globals.css'
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -47,6 +48,7 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body className={`${inter.variable} font-sans antialiased`} suppressHydrationWarning>
+        <ScrollProgress />
         <AuthProvider>
           <CartProvider>
             <PageTransition>

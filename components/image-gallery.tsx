@@ -47,7 +47,7 @@ export function ImageGallery({ images, productName, isNew, hasSale }: ImageGalle
       <div className="space-y-4">
         {/* Main Image avec zoom */}
         <div
-          className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-secondary cursor-zoom-in"
+          className="relative aspect-[3/4] rounded-xl overflow-hidden bg-secondary cursor-zoom-in"
           onMouseEnter={() => setIsZooming(true)}
           onMouseLeave={() => setIsZooming(false)}
           onMouseMove={handleMouseMove}

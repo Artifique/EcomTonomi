@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react"
 import Link from "next/link"
 import Image from "next/image"
+import { motion, AnimatePresence } from "framer-motion"
 import {
   AlertTriangle,
   Package,
@@ -13,6 +14,8 @@ import {
   XCircle,
   Clock,
   Loader2,
+  Sparkles,
+  ArrowUpRight,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -209,13 +212,26 @@ export default function NotificationsPage() {
   const getSeverityColor = (severity: Notification['severity']) => {
     switch (severity) {
       case 'error':
-        return 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400'
+        return 'bg-gradient-to-br from-red-500/20 to-rose-500/20 text-red-700 border border-red-500/30'
       case 'warning':
-        return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-400'
+        return 'bg-gradient-to-br from-yellow-500/20 to-amber-500/20 text-yellow-700 border border-yellow-500/30'
       case 'info':
-        return 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400'
+        return 'bg-gradient-to-br from-blue-500/20 to-cyan-500/20 text-blue-700 border border-blue-500/30'
       default:
-        return 'bg-gray-100 text-gray-700 dark:bg-gray-950 dark:text-gray-400'
+        return 'bg-gradient-to-br from-gray-500/20 to-slate-500/20 text-gray-700 border border-gray-500/30'
+    }
+  }
+
+  const getSeverityGradient = (severity: Notification['severity']) => {
+    switch (severity) {
+      case 'error':
+        return 'from-red-500 to-rose-500'
+      case 'warning':
+        return 'from-yellow-500 to-amber-500'
+      case 'info':
+        return 'from-blue-500 to-cyan-500'
+      default:
+        return 'from-gray-500 to-slate-500'
     }
   }
 
@@ -245,24 +261,45 @@ export default function NotificationsPage() {
   return (
     <div className="space-y-6">
       {/* Page header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+      >
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Notifications</h1>
-          <p className="text-muted-foreground">
-            {unreadCount > 0 ? `${unreadCount} notification(s) non lue(s)` : "Toutes les notifications sont lues"}
-          </p>
+          <h1 className="text-3xl lg:text-4xl font-bold text-foreground">Notifications</h1>
+          <div className="flex items-center gap-2 mt-2">
+            {unreadCount > 0 && (
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                className="w-2 h-2 rounded-full bg-gradient-to-r from-red-500 to-rose-500 animate-pulse"
+              />
+            )}
+            <p className="text-muted-foreground">
+              {unreadCount > 0 ? `${unreadCount} notification(s) non lue(s)` : "Toutes les notifications sont lues"}
+            </p>
+          </div>
         </div>
         {unreadCount > 0 && (
-          <Button
-            variant="outline"
-            onClick={markAllAsRead}
-            className="rounded-full"
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2, duration: 0.3 }}
           >
-            <CheckCircle2 className="w-4 h-4 mr-2" />
-            Tout marquer comme lu
-          </Button>
+            <Button
+              variant="outline"
+              onClick={markAllAsRead}
+              className="rounded-full bg-gradient-to-r from-accent/10 to-accent-rose/10 border-accent/30 hover:from-accent/20 hover:to-accent-rose/20 transition-all"
+            >
+              <CheckCircle2 className="w-4 h-4 mr-2" />
+              Tout marquer comme lu
+            </Button>
+          </motion.div>
         )}
-      </div>
+      </motion.div>
 
       {/* Notifications list */}
       {loading ? (
@@ -270,100 +307,194 @@ export default function NotificationsPage() {
           <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
         </div>
       ) : notifications.length === 0 ? (
-        <Card className="border-0 shadow-sm">
-          <CardContent className="p-12 text-center">
-            <Bell className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold text-foreground mb-2">
-              Aucune notification
-            </h3>
-            <p className="text-muted-foreground">
-              Vous n'avez aucune notification pour le moment.
-            </p>
-          </CardContent>
-        </Card>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          <Card className="border-0 shadow-lg relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-accent/5 via-accent-rose/5 to-accent-blue/5" />
+            <div className="absolute inset-[1px] bg-background/90 backdrop-blur-xl rounded-xl" />
+            <CardContent className="p-12 text-center relative z-10">
+              <motion.div
+                animate={{
+                  rotate: [0, 10, -10, 0],
+                }}
+                transition={{
+                  duration: 4,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              >
+                <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-accent/20 to-accent-rose/20 flex items-center justify-center">
+                  <Bell className="w-10 h-10 text-muted-foreground" />
+                </div>
+              </motion.div>
+              <h3 className="text-xl font-semibold text-foreground mb-2">
+                Aucune notification
+              </h3>
+              <p className="text-muted-foreground">
+                Vous n'avez aucune notification pour le moment.
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
       ) : (
-        <div className="space-y-3">
-          {notifications.map((notification) => (
-            <Card
-              key={notification.id}
-              className={cn(
-                "border-0 shadow-sm transition-all cursor-pointer hover:shadow-md",
-                !notification.read && "bg-blue-50 dark:bg-blue-950 border-l-4 border-l-blue-500"
-              )}
-              onClick={() => {
-                markAsRead(notification.id)
-                if (notification.productId) {
-                  window.location.href = `/admin/products`
-                } else if (notification.orderId) {
-                  window.location.href = `/admin/orders`
-                }
-              }}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-start gap-4">
-                  <div className={cn(
-                    "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0",
-                    getSeverityColor(notification.severity)
-                  )}>
-                    {getNotificationIcon(notification.type)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold text-foreground">
-                            {notification.title}
-                          </h3>
-                          {!notification.read && (
-                            <span className="h-2 w-2 bg-blue-500 rounded-full" />
-                          )}
+        <div className="space-y-4">
+          <AnimatePresence>
+            {notifications.map((notification, index) => (
+              <motion.div
+                key={notification.id}
+                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95, height: 0 }}
+                transition={{ delay: index * 0.05, duration: 0.3, ease: "easeOut" }}
+                layout
+              >
+                <Card
+                  className={cn(
+                    "border-0 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer relative overflow-hidden group",
+                    !notification.read && "ring-2 ring-accent/30"
+                  )}
+                  onClick={() => {
+                    markAsRead(notification.id)
+                    if (notification.productId) {
+                      window.location.href = `/admin/products`
+                    } else if (notification.orderId) {
+                      window.location.href = `/admin/orders`
+                    }
+                  }}
+                >
+                  {/* Gradient background for unread */}
+                  {!notification.read && (
+                    <motion.div
+                      className={cn(
+                        "absolute inset-0 bg-gradient-to-r opacity-50",
+                        notification.severity === 'error' && "from-red-500/10 to-rose-500/10",
+                        notification.severity === 'warning' && "from-yellow-500/10 to-amber-500/10",
+                        notification.severity === 'info' && "from-blue-500/10 to-cyan-500/10"
+                      )}
+                      animate={{
+                        opacity: [0.3, 0.5, 0.3],
+                      }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                      }}
+                    />
+                  )}
+                  
+                  {/* Glassmorphism overlay */}
+                  <div className="absolute inset-0 bg-background/80 backdrop-blur-xl" />
+                  
+                  {/* Animated border for unread */}
+                  {!notification.read && (
+                    <motion.div
+                      className={cn(
+                        "absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b",
+                        getSeverityGradient(notification.severity)
+                      )}
+                      initial={{ scaleY: 0 }}
+                      animate={{ scaleY: 1 }}
+                      transition={{ delay: index * 0.05 + 0.2, duration: 0.3 }}
+                    />
+                  )}
+
+                  <CardContent className="p-5 relative z-10">
+                    <div className="flex items-start gap-4">
+                      <motion.div
+                        whileHover={{ scale: 1.1, rotate: 5 }}
+                        className={cn(
+                          "w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg",
+                          "bg-gradient-to-br",
+                          getSeverityGradient(notification.severity)
+                        )}
+                      >
+                        <div className="text-white">
+                          {getNotificationIcon(notification.type)}
                         </div>
-                        <p className="text-sm text-muted-foreground mb-2">
-                          {notification.message}
-                        </p>
-                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                          <span>{formatTimestamp(notification.timestamp)}</span>
-                          {notification.productId && (
-                            <Link
-                              href="/admin/products"
-                              onClick={(e) => e.stopPropagation()}
-                              className="hover:text-foreground"
+                      </motion.div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h3 className="font-bold text-base text-foreground">
+                                {notification.title}
+                              </h3>
+                              {!notification.read && (
+                                <motion.span
+                                  initial={{ scale: 0 }}
+                                  animate={{ scale: 1 }}
+                                  className="h-2.5 w-2.5 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 shadow-lg"
+                                />
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground mb-3 leading-relaxed">
+                              {notification.message}
+                            </p>
+                            <div className="flex items-center gap-4 text-xs">
+                              <div className="flex items-center gap-1.5 text-muted-foreground">
+                                <Clock className="w-3.5 h-3.5" />
+                                <span>{formatTimestamp(notification.timestamp)}</span>
+                              </div>
+                              {notification.productId && (
+                                <Link
+                                  href="/admin/products"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="text-accent hover:text-accent-rose font-medium transition-colors flex items-center gap-1"
+                                >
+                                  Voir le produit
+                                  <ArrowUpRight className="w-3 h-3" />
+                                </Link>
+                              )}
+                              {notification.orderId && (
+                                <Link
+                                  href="/admin/orders"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="text-accent hover:text-accent-rose font-medium transition-colors flex items-center gap-1"
+                                >
+                                  Voir la commande
+                                  <ArrowUpRight className="w-3 h-3" />
+                                </Link>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <motion.div
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                          >
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                markAsRead(notification.id)
+                              }}
+                              className="flex-shrink-0 h-9 w-9 rounded-full hover:bg-accent/10"
                             >
-                              Voir le produit
-                            </Link>
-                          )}
-                          {notification.orderId && (
-                            <Link
-                              href="/admin/orders"
-                              onClick={(e) => e.stopPropagation()}
-                              className="hover:text-foreground"
-                            >
-                              Voir la commande
-                            </Link>
-                          )}
+                              {notification.read ? (
+                                <CheckCircle2 className="w-4 h-4 text-muted-foreground" />
+                              ) : (
+                                <motion.div
+                                  animate={{ rotate: [0, 10, -10, 0] }}
+                                  transition={{ duration: 2, repeat: Infinity }}
+                                >
+                                  <XCircle className="w-4 h-4 text-foreground" />
+                                </motion.div>
+                              )}
+                            </Button>
+                          </motion.div>
                         </div>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          markAsRead(notification.id)
-                        }}
-                        className="flex-shrink-0"
-                      >
-                        {notification.read ? (
-                          <CheckCircle2 className="w-4 h-4 text-muted-foreground" />
-                        ) : (
-                          <XCircle className="w-4 h-4" />
-                        )}
-                      </Button>
                     </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       )}
     </div>

@@ -179,7 +179,7 @@ export function ShopPageClient({ initialProducts, categories }: ShopPageClientPr
           {initialProducts.map((product) => (
             <div key={product.id} className="group">
               <Link href={`/product/${product.id}`}>
-                <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-secondary mb-3">
+                <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-secondary mb-3">
                   <Image src={product.images?.[0] && product.images[0] !== '' ? product.images[0] : "/placeholder.svg"} alt={product.name} fill className="object-cover object-center group-hover:scale-105 transition-transform duration-500" />
                   {product.is_new && (
                     <span className="absolute top-3 left-3 px-2 py-1 text-[10px] font-semibold tracking-wider uppercase bg-accent text-accent-foreground rounded-full">

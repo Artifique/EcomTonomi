@@ -251,8 +251,8 @@ function RegisterForm({
       toast.success("Compte créé avec succès !")
       router.push("/account/dashboard")
     } else {
-      if (result.error?.includes("Email rate limit exceeded")) {
-        toast.error("Limite d'envoi d'e-mails dépassée. Veuillez réessayer plus tard.");
+      if (result.error?.includes("rate limit") || result.error?.includes("Email rate limit exceeded")) {
+        toast.error("Limite d'envoi d'e-mails dépassée. Désactivez la confirmation d'email dans Supabase pour le développement.");
       } else if (result.error?.includes("email service not configured")) {
         toast.error("Le service d'e-mail n'est pas configuré. Veuillez contacter l'administrateur.");
       } else if (result.error?.includes("Failed to send confirmation mail")) {
