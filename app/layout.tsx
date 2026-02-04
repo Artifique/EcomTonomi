@@ -7,6 +7,8 @@ import { CartProvider } from '@/context/cart-context'
 import { AuthProvider } from '@/context/auth-context'
 import { PageTransition } from '@/components/page-transition'
 import { ScrollProgress } from '@/components/scroll-progress'
+import 'mapbox-gl/dist/mapbox-gl.css'
+import '@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css'
 import './globals.css'
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
