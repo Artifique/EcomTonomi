@@ -57,20 +57,33 @@ export function useCustomerLocations() {
 
   const upsertLocation = useCallback(
     async (payload: Omit<CustomerLocation, "id"> & { id?: string }) => {
-      const { error: upsertError } = await supabase.from("customer_locations").upsert(
-        {
-          id: payload.id,
-          city: payload.city,
-          country: payload.country,
-          lat: payload.lat,
-          lng: payload.lng,
-          count: payload.count,
-          customers: payload.customers ?? [],
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "id" }
-      )
-      if (upsertError) throw upsertError
+      const dataToSave = {
+        city: payload.city,
+        country: payload.country,
+        lat: payload.lat,
+        lng: payload.lng,
+        count: payload.count,
+        customers: payload.customers ?? [],
+        updated_at: new Date().toISOString(),
+      }
+
+      if (payload.id) {
+        // Mise à jour d'une localisation existante
+        const { error: updateError } = await supabase
+          .from("customer_locations")
+          .update(dataToSave)
+          .eq("id", payload.id)
+        
+        if (updateError) throw updateError
+      } else {
+        // Création d'une nouvelle localisation
+        const { error: insertError } = await supabase
+          .from("customer_locations")
+          .insert(dataToSave)
+        
+        if (insertError) throw insertError
+      }
+      
       await fetchLocations()
     },
     [fetchLocations]
