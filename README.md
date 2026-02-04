@@ -234,3 +234,11 @@ Pour contribuer ou modifier le projet :
 ---
 
 **Note** : Cette application est conçue comme une démonstration frontend-only. Pour une application de production, considérez l'ajout d'un backend pour la sécurité, la synchronisation et la persistance des données.
+
+
+
+
+
+
+
+ https://account.mapbox.com/
